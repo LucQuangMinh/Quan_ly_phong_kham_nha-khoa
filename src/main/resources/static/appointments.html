@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng ký khám - Hệ thống Nha Khoa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --sidebar-bg: #f8fafc; --sidebar-border: #e2e8f0; --text-primary: #1e293b; --text-muted: #64748b;
+      --active-bg: #e8f1fe; --active-text: #2563eb; --hover-bg: #f1f5f9; --radius-item: 10px;
+      --primary: #2563eb; --primary-hover: #1d4ed8; --surface: #ffffff; --table-head: #f1f5f9;
+      --danger: #dc2626; --danger-bg: #fef2f2;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: "Inter", system-ui, sans-serif; background: #fff; color: var(--text-primary); display: flex; }
+
+    .sidebar { width: 288px; min-height: 100vh; background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); padding: 20px 12px 24px; flex-shrink: 0; }
+    .sidebar-header { padding: 4px 10px 16px; border-bottom: 1px solid var(--sidebar-border); margin-bottom: 12px; }
+    .sidebar-header h1 { margin: 0; font-size: 1rem; font-weight: 700; }
+    .sidebar-header p { margin: 4px 0 0; font-size: 0.8125rem; color: var(--text-muted); }
+    .nav { display: flex; flex-direction: column; gap: 2px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-item); font-size: 0.875rem; font-weight: 500; color: var(--text-primary); text-decoration: none; border: none; background: transparent; width: 100%; text-align: left; cursor: pointer; transition: background 0.15s ease; }
+    .nav-item:hover { background: var(--hover-bg); }
+    .nav-item .icon { flex-shrink: 0; width: 22px; height: 22px; color: var(--text-muted); }
+    .nav-item.active { background: var(--active-bg); color: var(--active-text); }
+    .nav-item.active .icon { color: var(--active-text); }
+
+    main { flex: 1; padding: 24px 32px 40px; background: #fafbfc; overflow-y: auto; }
+    .content-shell { max-width: 1400px; margin: 0 auto; }
+    
+    .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .page-head h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+    .crumb { font-size: 0.8125rem; color: var(--text-muted); margin: 0 0 16px; }
+    .crumb strong { color: var(--text-primary); font-weight: 600; }
+
+    .btn { padding: 8px 16px; border-radius: 8px; font-weight: 500; font-size: 0.875rem; cursor: pointer; border: none; transition: 0.2s; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-danger { background: var(--danger); color: #fff; }
+
+    .table-container { background: var(--surface); border: 1px solid var(--sidebar-border); border-radius: 12px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: var(--table-head); padding: 12px 16px; font-weight: 600; font-size: 0.8125rem; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--sidebar-border); }
+    td { padding: 14px 16px; font-size: 0.875rem; border-bottom: 1px solid var(--sidebar-border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--hover-bg); }
+
+    .status-badge { padding: 4px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+    .status-đãđặt { background: #dbeafe; color: #1e40af; }
+    .status-hủy { background: #fee2e2; color: #991b1b; }
+    .status-đãxácnhận { background: #dcfce7; color: #166534; }
+    .status-khámxong { background: #fef3c7; color: #92400e; }
+
+    .action-link { color: var(--primary); font-weight: 500; cursor: pointer; margin-right: 12px; text-decoration: none; }
+    .action-delete { color: var(--danger); }
+
+    /* Modal */
+    .modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.4); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .modal { background: #fff; width: 100%; max-width: 800px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 24px; max-height: 90vh; overflow-y: auto; }
+    .modal h2 { margin: 0 0 20px; font-size: 1.25rem; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 6px; font-size: 0.875rem; font-weight: 500; color: #334155; }
+    .form-control { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.875rem; outline: none; transition: border-color 0.2s; }
+    .form-control:focus { border-color: var(--primary); }
+    .form-control:disabled { background: #f1f5f9; cursor: not-allowed; color: #64748b; }
+    
+    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+
+    /* Mini Calendar */
+    .mini-calendar { border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; margin-top: 8px; }
+    .mc-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-bottom: 1px solid #cbd5e1; }
+    .mc-nav button { background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
+    .mc-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
+    .mc-header { background: #f1f5f9; font-weight: 600; font-size: 0.75rem; padding: 6px 0; border-bottom: 1px solid #cbd5e1; }
+    .mc-cell { min-height: 60px; padding: 4px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; display: flex; flex-direction: column; }
+    .mc-cell:nth-child(7n) { border-right: none; }
+    .mc-date { font-size: 0.75rem; font-weight: 600; text-align: right; margin-bottom: 4px; color: #475569; }
+    .mc-shift { font-size: 0.65rem; padding: 2px; border-radius: 4px; cursor: pointer; margin-bottom: 2px; font-weight: 600; border: 1px solid transparent; }
+    .mc-shift.sáng { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .mc-shift.chiều { background: #ffedd5; color: #c2410c; border-color: #fed7aa; }
+    .mc-shift.tối { background: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
+    .mc-shift:hover { filter: brightness(0.95); }
+    .mc-shift.selected { border-color: #000; box-shadow: 0 0 0 1px #000; }
+    .mc-cell.holiday { background: #fef2f2; pointer-events: none; opacity: 0.6; }
+    .mc-cell.empty { background: #f8fafc; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Inject -->
+  <aside class="sidebar" aria-label="Điều hướng chính" id="dynamicSidebar">
+    <header class="sidebar-header">
+      <h1 id="sidebarTitle">Hệ thống Nha Khoa</h1>
+      <p id="sidebarSubtitle">Vai trò</p>
+    </header>
+
+    <nav class="nav" id="sidebarNav" aria-label="Menu chính">
+      <a href="appointments.html" class="nav-item" data-menu="appointments">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span>
+        <span class="menu-text">Đăng ký khám</span>
+      </a>
+      <a href="tracking.html" class="nav-item" data-menu="tracking">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg></span>
+        <span class="menu-text">Theo dõi lịch khám</span>
+      </a>
+      <a href="schedules.html" class="nav-item" data-menu="schedules">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span>
+        <span class="menu-text">Lịch trực bác sĩ</span>
+      </a>
+      <a href="doctors.html" class="nav-item" data-menu="doctors">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+        <span class="menu-text">Hồ sơ Bác sĩ</span>
+      </a>
+      <a href="users.html" class="nav-item" data-menu="users">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+        <span class="menu-text">Quản lý Người dùng</span>
+      </a>
+      <a href="services.html" class="nav-item" data-menu="services">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>
+        <span class="menu-text">Danh mục Dịch vụ</span>
+      </a>
+      
+      <a href="holidays.html" class="nav-item" data-menu="holidays">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg></span>
+        <span class="menu-text">Thiết lập ngày nghỉ</span>
+      </a>
+      <a href="shifts.html" class="nav-item" data-menu="shifts">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
+        <span class="menu-text">Thiết lập ca làm việc</span>
+      </a>
+      <div style="margin-top: 30px; border-top: 1px solid var(--sidebar-border); padding-top: 10px;"></div>
+      <a href="#" class="nav-item" onclick="logout(event)" style="color: #dc2626;">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
+        <span class="menu-text">Đăng xuất</span>
+      </a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="content-shell">
+        <div class="crumb">Hệ thống / <strong>Đăng ký khám</strong></div>
+        <div class="page-head">
+            <h1>Lịch khám của tôi</h1>
+            <button class="btn btn-primary" onclick="openAddModal()">+ Đặt lịch khám mới</button>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã lịch</th>
+                        <th>Họ tên</th>
+                        <th>Ngày khám</th>
+                        <th>Ca khám</th>
+                        <th>Dịch vụ</th>
+                        <th>Bác sĩ</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+  </main>
+
+  <div id="appModal" class="modal-backdrop">
+    <div class="modal">
+        <h2 id="modalTitle">Đặt lịch khám</h2>
+        <input type="hidden" id="appId">
+        
+        <div style="display: flex; gap: 16px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Họ tên bệnh nhân</label>
+                <input type="text" id="patientName" class="form-control" disabled>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Số điện thoại</label>
+                <input type="text" id="patientPhone" class="form-control" disabled>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 16px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Chọn Bác sĩ</label>
+                <select id="doctorId" class="form-control" onchange="handleDoctorChange()">
+                    <option value="">-- Chọn bác sĩ để xem lịch trực --</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Khoa/Phòng</label>
+                <input type="text" id="room" class="form-control" readonly placeholder="Tự động điền">
+            </div>
+        </div>
+        
+                <div style="display: flex; gap: 16px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Nhóm dịch vụ</label>
+                <select id="serviceCategory" class="form-control" onchange="handleCategoryChange()">
+                    <option value="">-- Chọn nhóm --</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Dịch vụ</label>
+                <select id="serviceId" class="form-control" onchange="handleServiceChange()">
+                    <option value="">-- Chọn dịch vụ --</option>
+                </select>
+            </div>
+        </div>
+        <div id="priceQuote" style="grid-column: span 2; display: none; color: #dc2626; font-weight: 600; background: #fee2e2; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #fca5a5;">
+            Giá tham khảo: <span id="quotedPriceText">0</span> VNĐ
+        </div>
+        
+        <div class="form-group" id="statusGroup" style="display: none;">
+            <label>Trạng thái</label>
+            <select id="status" class="form-control">
+                <option value="Đã đặt">Đã đặt</option>
+                <option value="Đã xác nhận">Đã xác nhận</option>
+                <option value="Khám xong">Khám xong</option>
+                <option value="Hủy">Hủy</option>
+            </select>
+        </div>
+        
+        <div class="form-group" id="calendarSection" style="display: none; grid-column: span 2;">
+            <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span>Chọn Ngày và Ca khám trên lịch</span>
+                <div>
+                    <button type="button" class="btn-ghost" style="padding: 4px 10px; font-size: 0.75rem; border: 1px solid #cbd5e1; background: white; border-radius: 4px; cursor: pointer;" onclick="prevMiniMonth()">&#8592; Tháng trước</button>
+                    <span id="miniMonthTitle" style="font-weight: 600; margin: 0 10px; font-size: 0.875rem;">Tháng ...</span>
+                    <button type="button" class="btn-ghost" style="padding: 4px 10px; font-size: 0.75rem; border: 1px solid #cbd5e1; background: white; border-radius: 4px; cursor: pointer;" onclick="nextMiniMonth()">Tháng sau &#8594;</button>
+                </div>
+            </label>
+            <div id="miniCalendar" style="display: flex; flex-direction: column; background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
+                 <!-- Calendar grid will go here -->
+            </div>
+            <div id="selectedInfo" style="margin-top: 12px; color: #2563eb; font-weight: 500; text-align: center; background: #eff6ff; padding: 10px; border-radius: 6px;">Vui lòng chọn ca khám trên lịch</div>
+        </div>
+        
+        <input type="hidden" id="selectedDate">
+        <input type="hidden" id="selectedShift">
+        
+        <div class="form-group" style="grid-column: span 2;">
+            <label>Ghi chú triệu chứng</label>
+            <input type="text" id="note" class="form-control" placeholder="Mô tả sơ qua vấn đề của bạn...">
+        </div>
+        
+        <div class="modal-actions" style="grid-column: span 2;">
+            <button class="btn" style="background: #e2e8f0;" onclick="closeModal()">Đóng</button>
+            <button class="btn btn-primary" onclick="saveAppointment()">Xác nhận đặt lịch</button>
+        </div>
+    </div>
+  </div>
+
+  <style>
+    /* CSS for mini calendar */
+    .mini-cal-header { display: grid; grid-template-columns: repeat(7, 1fr); background: #f1f5f9; text-align: center; font-size: 0.75rem; font-weight: 600; color: #64748b; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+    .mini-cal-row { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid #e2e8f0; }
+    .mini-cal-row:last-child { border-bottom: none; }
+    .mini-cal-cell { padding: 4px; min-height: 70px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 4px; }
+    .mini-cal-cell:last-child { border-right: none; }
+    .mini-cal-date { font-size: 0.75rem; font-weight: 600; text-align: center; margin-bottom: 4px; color: #475569; }
+    .mini-cal-cell.out-month { background: #f8fafc; opacity: 0.6; }
+    .mini-cal-cell.is-holiday { background: #fef2f2; }
+    .mini-shift { font-size: 0.7rem; padding: 4px; border-radius: 4px; cursor: pointer; text-align: center; font-weight: 500; border: 1px solid transparent; }
+    .mini-shift.sang { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+    .mini-shift.chieu { background: #ffedd5; color: #c2410c; border-color: #fed7aa; }
+    .mini-shift.toi { background: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
+    .mini-shift:hover { filter: brightness(0.95); }
+    .mini-shift.selected { border: 2px solid #2563eb; font-weight: 700; box-shadow: 0 0 0 2px white inset; }
+  </style>
+
+  <script>
+    const userStr = localStorage.getItem('user');
+    if (!userStr) window.location.href = 'login.html';
+    const currentUser = JSON.parse(userStr);
+    const currentRoleLower = (currentUser.role || 'Admin').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+    
+    // Lọc menu theo role
+    if (currentRoleLower.includes('benh nhan')) {
+        document.querySelectorAll('.admin-only, .staff-only').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.menu-text').forEach(el => {
+            if (el.textContent.includes('Đăng ký khám')) el.textContent = 'Lịch khám của tôi';
+            if (el.textContent.includes('Theo dõi lịch khám')) el.textContent = 'Theo dõi lịch khám của tôi';
+        });
+    } else if (currentRoleLower.includes('bac si') || currentRoleLower.includes('le tan')) {
+        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+    }
+
+    function logout(e) {
+        e.preventDefault();
+        localStorage.removeItem('user');
+        window.location.href = 'login.html';
+    }
+
+    function getLocalIsoDate(dateObj) { const d = new Date(dateObj); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().split('T')[0]; }
+
+    let appointments = [];
+    let doctors = [];
+    let holidays = [];
+    let doctorSchedules = [];
+    let allServices = [];
+    let currentMonth = new Date();
+    
+    let miniCurrentMonth = new Date().getMonth();
+    let miniCurrentYear = new Date().getFullYear();
+    
+    function prevMiniMonth() { miniCurrentMonth--; if(miniCurrentMonth < 0) { miniCurrentMonth = 11; miniCurrentYear--; } renderMiniCalendar(); }
+    function nextMiniMonth() { miniCurrentMonth++; if(miniCurrentMonth > 11) { miniCurrentMonth = 0; miniCurrentYear++; } renderMiniCalendar(); }
+
+    window.selectShift = function(date, shift) {
+        document.getElementById('selectedDate').value = date;
+        document.getElementById('selectedShift').value = shift;
+        
+        const parts = date.split('-');
+        const displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        document.getElementById('selectedInfo').innerText = `Đã chọn: Ngày ${displayDate} - Ca ${shift}`;
+        
+        document.querySelectorAll('.mini-shift').forEach(el => el.classList.remove('selected'));
+        const targetId = `shift-${date}-${shift}`;
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) targetEl.classList.add('selected');
+    }
+
+    async function loadData() {
+        const headers = { 'Content-Type': 'application/json', 'X-Role': encodeURIComponent(currentUser.role) };
+        const queryParams = currentRoleLower.includes('benh nhan') ? `?role=Bệnh nhân&patientName=${encodeURIComponent(currentUser.fullname)}` : '?role=Admin';
+        
+        try {
+            const res = await fetch('/api/patient-appointments' + queryParams, { headers });
+            appointments = await res.json();
+        } catch (e) { console.error(e); }
+        
+        try {
+            const resD = await fetch('/api/doctors', { headers });
+            doctors = await resD.json();
+            
+            if (currentRoleLower.includes('bac si')) {
+                const myDoctor = doctors.find(d => (d.user_id === currentUser.id || d.userId === currentUser.id));
+                if (myDoctor) {
+                    appointments = appointments.filter(a => a.doctorId === myDoctor.id);
+                } else {
+                    appointments = [];
+                }
+            }
+            
+            const docSel = document.getElementById('doctorId');
+            docSel.innerHTML = '<option value="">-- Chọn bác sĩ để xem lịch trực --</option>';
+            doctors.forEach(d => {
+                const title = d.degree ? d.degree : 'BS';
+                docSel.innerHTML += `<option value="${d.id}">${title}. ${d.fullname} - ${d.room || 'Chưa xếp phòng'}</option>`;
+            });
+        } catch (e) { console.error(e); }
+        
+        try {
+            const resS = await fetch('/api/services', { headers });
+            allServices = await resS.json();
+        } catch (e) { console.error(e); }
+        
+        try {
+            const resH = await fetch('/api/holidays', { headers });
+            holidays = (await resH.json()).map(h => h.holidayDate);
+        } catch (e) {}
+        
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        if (appointments.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Chưa có lịch khám nào.</td></tr>`;
+            return;
+        }
+        
+        appointments.forEach(a => {
+            let docName = 'Không rõ';
+            if (a.doctorId) {
+                const d = doctors.find(x => x.id === a.doctorId);
+                if (d) docName = d.fullname;
+            }
+            
+            let statusClass = 'status-đãđặt';
+            if (a.status === 'Đã xác nhận') statusClass = 'status-đãxácnhận';
+            if (a.status === 'Khám xong') statusClass = 'status-khámxong';
+            if (a.status === 'Hủy') statusClass = 'status-hủy';
+            
+            let actionHtml = '';
+            if (a.status === 'Đã đặt') {
+                actionHtml = `
+                    <a class="action-link" onclick="openEditModal(${a.id})">Sửa</a>
+                    <a class="action-link action-delete" onclick="cancelAppointment(${a.id})">Hủy lịch</a>
+                `;
+            }
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td>${a.code || ''}</td>
+                    <td>${a.patientName}</td>
+                    <td>${a.examinationDate}</td>
+                    <td>${a.shiftType}</td>
+                    <td>${a.serviceName || ""}</td>
+                    <td>${docName}</td>
+                    <td><span class="status-badge ${statusClass}">${a.status}</span></td>
+                    <td>${actionHtml}</td>
+                </tr>
+            `;
+        });
+    }
+
+    
+    function populateCategories() {
+        const catSet = new Set(allServices.map(s => s.category));
+        const catSel = document.getElementById('serviceCategory');
+        catSel.innerHTML = '<option value="">-- Chọn nhóm --</option>';
+        catSet.forEach(c => {
+            if(c) catSel.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+    }
+
+    function handleCategoryChange() {
+        const cat = document.getElementById('serviceCategory').value;
+        const srvSel = document.getElementById('serviceId');
+        srvSel.innerHTML = '<option value="">-- Chọn dịch vụ --</option>';
+        document.getElementById('priceQuote').style.display = 'none';
+        
+        if(cat) {
+            allServices.filter(s => s.category === cat && s.status === 'Áp dụng').forEach(s => {
+                srvSel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+            });
+        }
+    }
+
+    function handleServiceChange() {
+        const srvId = document.getElementById('serviceId').value;
+        const quoteDiv = document.getElementById('priceQuote');
+        if(srvId) {
+            const srv = allServices.find(s => s.id == srvId);
+            if(srv && srv.price != null) {
+                document.getElementById('quotedPriceText').innerText = srv.price.toLocaleString('vi-VN');
+                quoteDiv.style.display = 'block';
+            } else {
+                quoteDiv.style.display = 'none';
+            }
+        } else {
+            quoteDiv.style.display = 'none';
+        }
+    }
+
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent = 'Đặt lịch khám mới';
+        document.getElementById('appId').value = '';
+        document.getElementById('patientName').value = currentRoleLower.includes('benh nhan') ? currentUser.fullname : '';
+        document.getElementById('patientPhone').value = currentRoleLower.includes('benh nhan') ? (currentUser.phone || '0900000000') : '';
+        document.getElementById('doctorId').value = '';
+        document.getElementById('room').value = '';
+        document.getElementById('selectedDate').dataset.temp = '';
+        document.getElementById('selectedShift').dataset.temp = '';
+        document.getElementById('selectedDate').value = '';
+        document.getElementById('selectedShift').value = '';
+        document.getElementById('note').value = '';
+        document.getElementById('selectedInfo').innerText = 'Vui lòng chọn ca khám trên lịch';
+        
+        populateCategories();
+        document.getElementById('serviceCategory').value = '';
+        document.getElementById('serviceId').innerHTML = '<option value="">-- Chọn dịch vụ --</option>';
+        document.getElementById('priceQuote').style.display = 'none';
+
+        
+        if (currentRoleLower.includes('admin') || currentRoleLower.includes('le tan')) {
+            document.getElementById('statusGroup').style.display = 'block';
+            document.getElementById('status').value = 'Đã đặt';
+        } else {
+            document.getElementById('statusGroup').style.display = 'none';
+        }
+        
+        document.getElementById('calendarSection').style.display = 'none';
+        document.getElementById('appModal').style.display = 'flex';
+        
+        // Modal layout fix for calendar width
+        document.querySelector('.modal').style.width = '700px';
+        document.querySelector('.modal').style.maxWidth = '95vw';
+        
+        // Chuyển form thành dạng grid 2 cột
+        const formGroups = document.querySelectorAll('.modal > div[style*="display: flex"]');
+        formGroups.forEach(el => {
+            el.style.display = 'grid';
+            el.style.gridTemplateColumns = '1fr 1fr';
+            el.style.gap = '16px';
+            el.querySelectorAll('.form-group').forEach(fg => fg.style.flex = '');
+        });
+    }
+
+    function openEditModal(id) {
+        const a = appointments.find(x => x.id === id);
+        if (!a) return;
+        document.getElementById('modalTitle').textContent = 'Sửa lịch khám';
+        document.getElementById('appId').value = a.id;
+        document.getElementById('patientName').value = a.patientName;
+        document.getElementById('patientPhone').value = a.patientPhone || '';
+        document.getElementById('doctorId').value = a.doctorId;
+        document.getElementById('room').value = a.room || '';
+        document.getElementById('selectedDate').dataset.temp = a.examinationDate;
+        document.getElementById('selectedShift').dataset.temp = a.shiftType;
+        document.getElementById('selectedDate').value = a.examinationDate;
+        document.getElementById('selectedShift').value = a.shiftType;
+        document.getElementById('note').value = a.note || '';
+        
+        populateCategories();
+        if (a.serviceId) {
+            const srv = allServices.find(s => s.id == a.serviceId);
+            if (srv) {
+                document.getElementById('serviceCategory').value = srv.category;
+                handleCategoryChange();
+                document.getElementById('serviceId').value = a.serviceId;
+                if (a.quotedPrice != null) {
+                    document.getElementById('quotedPriceText').innerText = a.quotedPrice.toLocaleString('vi-VN');
+                    document.getElementById('priceQuote').style.display = 'block';
+                }
+            }
+        } else {
+            document.getElementById('serviceCategory').value = '';
+            document.getElementById('serviceId').innerHTML = '<option value="">-- Chọn dịch vụ --</option>';
+            document.getElementById('priceQuote').style.display = 'none';
+        }
+
+        
+        if (currentRoleLower.includes('admin') || currentRoleLower.includes('le tan')) {
+            document.getElementById('statusGroup').style.display = 'block';
+            document.getElementById('status').value = a.status;
+        } else {
+            document.getElementById('statusGroup').style.display = 'none';
+        }
+        
+        document.getElementById('appModal').style.display = 'flex';
+        
+        // Modal layout fix
+        document.querySelector('.modal').style.width = '700px';
+        document.querySelector('.modal').style.maxWidth = '95vw';
+        const formGroups = document.querySelectorAll('.modal > div[style*="display: flex"]');
+        formGroups.forEach(el => {
+            el.style.display = 'grid';
+            el.style.gridTemplateColumns = '1fr 1fr';
+            el.style.gap = '16px';
+            el.querySelectorAll('.form-group').forEach(fg => fg.style.flex = '');
+        });
+
+        renderMiniCalendar();
+    }
+
+    function closeModal() {
+        document.getElementById('appModal').style.display = 'none';
+    }
+
+    function handleDoctorChange() {
+        const docId = document.getElementById('doctorId').value;
+        if (docId) {
+            const d = doctors.find(x => x.id == docId);
+            if (d) {
+                document.getElementById('room').value = d.room || 'Chưa xếp phòng';
+            } else {
+                document.getElementById('room').value = '';
+            }
+        } else {
+            document.getElementById('room').value = '';
+        }
+        
+        document.getElementById('selectedDate').value = '';
+        document.getElementById('selectedShift').value = '';
+        document.getElementById('selectedInfo').innerText = 'Vui lòng chọn ca khám trên lịch';
+        
+        renderMiniCalendar();
+    }
+
+    async function renderMiniCalendar() {
+        const docId = document.getElementById('doctorId').value;
+        const calSec = document.getElementById('calendarSection');
+        const miniCal = document.getElementById('miniCalendar');
+        
+        document.getElementById('miniMonthTitle').innerText = `Tháng ${miniCurrentMonth + 1}/${miniCurrentYear}`;
+
+        if (!docId) {
+            calSec.style.display = 'none';
+            return;
+        }
+        calSec.style.display = 'block';
+        
+        const firstDay = new Date(miniCurrentYear, miniCurrentMonth, 1);
+        let startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; 
+        let gridStartDate = new Date(miniCurrentYear, miniCurrentMonth, 1 - startDayOfWeek);
+        let gridEndDate = new Date(gridStartDate.getFullYear(), gridStartDate.getMonth(), gridStartDate.getDate() + 41);
+        
+        const startStr = getLocalIsoDate(gridStartDate);
+        const endStr = getLocalIsoDate(gridEndDate);
+        
+        try {
+            const headers = { 'Content-Type': 'application/json', 'X-Role': encodeURIComponent(currentUser.role) };
+            const res = await fetch(`/api/schedules?start=${startStr}&end=${endStr}&role=Admin`, { headers });
+            const allSchedules = await res.json();
+            doctorSchedules = allSchedules.filter(s => s.doctor && s.doctor.id == docId && s.status === 'Đã duyệt trực');
+            
+            const todayStr = getLocalIsoDate(new Date());
+            
+            let html = `
+                <div class="mini-cal-header">
+                    <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
+                </div>
+            `;
+            
+            for (let row = 0; row < 6; row++) {
+                html += `<div class="mini-cal-row">`;
+                for (let col = 0; col < 7; col++) {
+                    let d = new Date(gridStartDate.getFullYear(), gridStartDate.getMonth(), gridStartDate.getDate() + (row * 7) + col);
+                    let isoStr = getLocalIsoDate(d);
+                    
+                    let isCurrentMonth = d.getMonth() === miniCurrentMonth;
+                    let cls = 'mini-cal-cell';
+                    if (!isCurrentMonth) cls += ' out-month';
+                    if (holidays.includes(isoStr)) cls += ' is-holiday';
+                    
+                    html += `<div class="${cls}">
+                                <div class="mini-cal-date">${d.getDate()}</div>`;
+                    
+                    if (!holidays.includes(isoStr) && isoStr >= todayStr) {
+                        let daySchedules = doctorSchedules.filter(s => s.shiftDate === isoStr);
+                        daySchedules.forEach(s => {
+                            let shiftClass = s.shiftType === 'Sáng' ? 'sang' : s.shiftType === 'Chiều' ? 'chieu' : 'toi';
+                            let targetId = `shift-${isoStr}-${s.shiftType}`;
+                            html += `<div id="${targetId}" class="mini-shift ${shiftClass}" onclick="selectShift('${isoStr}', '${s.shiftType}')">${s.shiftType}</div>`;
+                        });
+                    }
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            }
+            miniCal.innerHTML = html;
+            
+            // Phục hồi selected
+            const selDate = document.getElementById('selectedDate').value || document.getElementById('selectedDate').dataset.temp;
+            const selShift = document.getElementById('selectedShift').value || document.getElementById('selectedShift').dataset.temp;
+            if (selDate && selShift) {
+                selectShift(selDate, selShift);
+            }
+            
+        } catch (e) { console.error(e); }
+    }
+
+    async function saveAppointment() {
+        const id = document.getElementById('appId').value;
+        const data = {
+            patientName: document.getElementById('patientName').value,
+            patientPhone: document.getElementById('patientPhone').value,
+            doctorId: document.getElementById('doctorId').value,
+            room: document.getElementById('room').value,
+            examinationDate: document.getElementById('selectedDate').value,
+            examinationDate: document.getElementById('selectedDate').value,
+            shiftType: document.getElementById('selectedShift').value,
+            note: document.getElementById('note').value
+        };
+        
+        const srvId = document.getElementById('serviceId').value;
+        if (srvId) {
+            const srv = allServices.find(s => s.id == srvId);
+            if (srv) {
+                data.serviceId = srv.id;
+                data.serviceName = srv.name;
+                data.quotedPrice = srv.price;
+            }
+        }
+        
+        if (currentRoleLower.includes('admin') || currentRoleLower.includes('le tan')) {
+            data.status = document.getElementById('status').value;
+        }
+        
+        if (!data.doctorId || !data.examinationDate || !data.shiftType) {
+            alert('Vui lòng chọn Bác sĩ và chọn Ca khám trên lịch!');
+            return;
+        }
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/patient-appointments/${id}` : '/api/patient-appointments';
+        
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                closeModal();
+                loadData();
+                alert('Thành công!');
+            } else {
+                const err = await res.json();
+                alert(err.message || 'Có lỗi xảy ra');
+            }
+        } catch (e) {
+            alert('Lỗi kết nối server');
+        }
+    }
+
+    async function cancelAppointment(id) {
+        if (!confirm('Bạn có chắc muốn hủy lịch khám này không? Thao tác này không thể hoàn tác!')) return;
+        try {
+            const res = await fetch(`/api/patient-appointments/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                loadData();
+                alert('Đã hủy lịch thành công!');
+            } else {
+                const err = await res.json();
+                alert(err.message);
+            }
+        } catch (e) { alert('Lỗi kết nối'); }
+    }
+
+    loadData();
+  </script>
+<script>
+
+    function setupDynamicUI() {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || !user.role) return;
+
+        let normalizedRole = user.role.toLowerCase()
+            .replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+
+        const titleMap = {
+            'admin': { title: 'Quản trị Viên', subtitle: 'Phòng Hành chính' },
+            'quan-ly-phong-kham': { title: 'Quản lý', subtitle: 'Phòng Khám Nha Khoa' },
+            'le-tan': { title: 'Lễ tân', subtitle: 'Quầy tiếp đón' },
+            'bac-si': { title: 'Bác sĩ', subtitle: 'Chuyên môn' },
+            'benh-nhan': { title: 'Bệnh nhân', subtitle: 'Cổng thông tin' }
+        };
+
+        const allowedMenus = {
+            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts'],
+            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts'],
+            'le-tan': ['appointments', 'tracking', 'schedules'],
+            'bac-si': ['schedules', 'tracking'],
+            'benh-nhan': ['appointments']
+        };
+
+        const currentSettings = titleMap[normalizedRole] || { title: 'Hệ thống', subtitle: 'Người dùng' };
+        
+        const titleEl = document.getElementById('sidebarTitle');
+        const subtitleEl = document.getElementById('sidebarSubtitle');
+        if (titleEl) titleEl.innerText = currentSettings.title;
+        if (subtitleEl) subtitleEl.innerText = currentSettings.subtitle;
+
+        const allowed = allowedMenus[normalizedRole] || [];
+        document.querySelectorAll('#sidebarNav .nav-item[data-menu]').forEach(el => {
+            const menuId = el.getAttribute('data-menu');
+            if (!allowed.includes(menuId)) {
+                el.style.display = 'none';
+            } else {
+                el.style.display = 'flex';
+                // Set active class if this is the current page
+                if (window.location.href.includes(menuId + '.html')) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            }
+        });
+    }
+
+</script>
+<script>document.addEventListener('DOMContentLoaded', setupDynamicUI);</script>
+</body>
+</html>

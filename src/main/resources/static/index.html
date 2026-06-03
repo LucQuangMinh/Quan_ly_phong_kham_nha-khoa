@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nha Khoa Nụ Cười - Quản Lý Phòng Khám</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo span { color: var(--text-main); }
+        .auth-buttons a {
+            text-decoration: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-login {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+        .btn-login:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+        .hero {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #eff6ff 0%, #fff 100%);
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+            color: #1e293b;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo">🦷 <span>Nha Khoa Care</span></a>
+        <div class="auth-buttons">
+            <a href="login.html" class="btn-login">Đăng nhập hệ thống</a>
+        </div>
+    </header>
+
+    <div class="hero">
+        <h1>Quản lý phòng khám nha khoa toàn diện</h1>
+        <p>Hệ thống hỗ trợ Đặt lịch, Quản lý Bệnh nhân, Lịch làm việc Bác sĩ, và Thiết lập Phòng khám chuyên nghiệp dành cho mọi Roles.</p>
+        <a href="login.html" class="btn-login" style="padding: 16px 32px; font-size: 1.1rem;">Bắt đầu sử dụng ngay</a>
+    </div>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (user) {
+            if (user.role === 'Admin') {
+                window.location.href = 'users.html';
+            } else if (user.role === 'Bác sĩ') {
+                window.location.href = 'schedules.html';
+            } else if (user.role === 'Lễ tân') {
+                window.location.href = 'tracking.html';
+            } else if (user.role === 'Quản lý phòng khám') {
+                window.location.href = 'doctors.html';
+            } else {
+                window.location.href = 'appointments.html';
+            }
+        }
+    </script>
+<script>document.addEventListener('DOMContentLoaded', setupDynamicUI);</script>
+</body>
+</html>

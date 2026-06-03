@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theo dõi lịch khám</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+          --sidebar-bg: #f8fafc;
+          --sidebar-border: #e2e8f0;
+          --text-primary: #1e293b;
+          --text-muted: #64748b;
+          --active-bg: #e8f1fe;
+          --active-text: #2563eb;
+          --hover-bg: #f1f5f9;
+          --radius-item: 10px;
+          --primary: #2563eb;
+          --primary-hover: #1d4ed8;
+          --surface: #ffffff;
+          --table-head: #f1f5f9;
+          --danger: #dc2626;
+          --danger-bg: #fef2f2;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+          margin: 0; min-height: 100vh; font-family: "Inter", system-ui, sans-serif;
+          background: #fff; color: var(--text-primary); display: flex;
+        }
+
+        .sidebar { width: 288px; min-height: 100vh; background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); padding: 20px 12px 24px; flex-shrink: 0; }
+        .sidebar-header { padding: 4px 10px 16px; border-bottom: 1px solid var(--sidebar-border); margin-bottom: 12px; }
+        .sidebar-header h1 { margin: 0; font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; }
+        .sidebar-header p { margin: 4px 0 0; font-size: 0.8125rem; color: var(--text-muted); }
+        .nav { display: flex; flex-direction: column; gap: 2px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-item); font-size: 0.875rem; font-weight: 500; color: var(--text-primary); text-decoration: none; border: none; background: transparent; width: 100%; text-align: left; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
+        .nav-item:hover { background: var(--hover-bg); }
+        .nav-item .icon { flex-shrink: 0; width: 22px; height: 22px; color: var(--text-muted); }
+        .nav-item.active { background: var(--active-bg); color: var(--active-text); }
+        .nav-item.active .icon { color: var(--active-text); }
+        
+        main { flex: 1; min-width: 0; padding: 24px 32px 40px; background: #fafbfc; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        .content-shell { max-width: 1400px; margin: 0 auto; width: 100%; height: 100%; display: flex; flex-direction: column; }
+        
+        .page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; flex-shrink: 0; }
+        .page-head h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+        .crumb { font-size: 0.8125rem; color: var(--text-muted); margin: 0 0 16px; flex-shrink: 0; }
+        .crumb strong { color: var(--text-primary); font-weight: 600; }
+
+        /* Tracking specific CSS */
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+        
+        .tabs { display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; padding-bottom: 0; flex-shrink: 0; }
+        .tab-btn { background: none; border: none; padding: 10px 16px; cursor: pointer; color: #64748b; font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+        .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+        .tab-btn:hover:not(.active) { color: #334155; border-bottom-color: #cbd5e1; }
+        
+        .table-container { flex: 1; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: white; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.875rem; }
+        th { background: #f8fafc; font-weight: 600; color: #475569; position: sticky; top: 0; z-index: 10; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #f1f5f9; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 500; display: inline-block; }
+        .status-chờ { background: #fef9c3; color: #854d0e; }
+        .status-đang { background: #dbeafe; color: #1e40af; }
+        .status-đã { background: #dcfce3; color: #166534; }
+        .status-hủy, .status-vắng { background: #fee2e2; color: #991b1b; }
+        
+        /* Modal styles */
+        .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; }
+        .modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 24px; border-radius: 8px; width: 100%; max-width: 500px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .modal h2 { margin-top: 0; margin-bottom: 16px; font-size: 1.25rem; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 0.875rem; }
+        .form-control { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        
+        .action-link { color: #2563eb; text-decoration: none; cursor: pointer; font-weight: 500; margin-right: 8px; }
+        .action-link:hover { text-decoration: underline; }
+        .action-delete { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar" aria-label="Điều hướng chính" id="dynamicSidebar">
+    <header class="sidebar-header">
+      <h1 id="sidebarTitle">Hệ thống Nha Khoa</h1>
+      <p id="sidebarSubtitle">Vai trò</p>
+    </header>
+
+    <nav class="nav" id="sidebarNav" aria-label="Menu chính">
+      <a href="appointments.html" class="nav-item" data-menu="appointments">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span>
+        <span class="menu-text">Đăng ký khám</span>
+      </a>
+      <a href="tracking.html" class="nav-item" data-menu="tracking">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg></span>
+        <span class="menu-text">Theo dõi lịch khám</span>
+      </a>
+      <a href="schedules.html" class="nav-item" data-menu="schedules">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span>
+        <span class="menu-text">Lịch trực bác sĩ</span>
+      </a>
+      <a href="doctors.html" class="nav-item" data-menu="doctors">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+        <span class="menu-text">Hồ sơ Bác sĩ</span>
+      </a>
+      <a href="users.html" class="nav-item" data-menu="users">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+        <span class="menu-text">Quản lý Người dùng</span>
+      </a>
+      <a href="services.html" class="nav-item" data-menu="services">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>
+        <span class="menu-text">Danh mục Dịch vụ</span>
+      </a>
+      
+      <a href="holidays.html" class="nav-item" data-menu="holidays">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg></span>
+        <span class="menu-text">Thiết lập ngày nghỉ</span>
+      </a>
+      <a href="shifts.html" class="nav-item" data-menu="shifts">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
+        <span class="menu-text">Thiết lập ca làm việc</span>
+      </a>
+      <div style="margin-top: 30px; border-top: 1px solid var(--sidebar-border); padding-top: 10px;"></div>
+      <a href="#" class="nav-item" onclick="logout(event)" style="color: #dc2626;">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
+        <span class="menu-text">Đăng xuất</span>
+      </a>
+    </nav>
+  </aside>
+
+    <main>
+        <div class="content-shell">
+            <div class="crumb">Hệ thống / <strong>Theo dõi lịch khám</strong></div>
+            <div class="page-head">
+                <h1 id="pageTitle">Theo dõi lịch khám</h1>
+                <button id="btnAdd" class="btn btn-primary" onclick="openAddModal()" style="display: none;">+ Thêm bản ghi</button>
+            </div>
+            
+            <div class="tabs" id="tabsContainer">
+                <button class="tab-btn active" onclick="switchTab('Đang chờ')">Chờ tiếp nhận</button>
+                <button class="tab-btn" onclick="switchTab('Đang khám')">Hàng đợi</button>
+                <button class="tab-btn" onclick="switchTab('Đã khám')">Đã khám</button>
+                <button class="tab-btn" onclick="switchTab('Đã hủy')">Đã hủy</button>
+                <button class="tab-btn" onclick="switchTab('Vắng')">Vắng</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã lượt</th>
+                            <th>Bệnh nhân</th>
+                            <th>Ngày khám</th>
+                            <th>Phòng khám</th>
+                            <th>Trạng thái</th>
+                            <th>Cập nhật lúc</th>
+                            <th id="thActions" style="display: none;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data goes here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="trackingModal" class="modal-backdrop">
+        <div class="modal">
+            <h2 id="modalTitle">Thêm bản ghi theo dõi</h2>
+            <input type="hidden" id="trackingId">
+            
+            <div class="form-group">
+                <label>Bệnh nhân</label>
+                <input type="text" id="patientName" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Ngày khám</label>
+                <input type="date" id="examDate" class="form-control" required>
+            </div>
+            
+            <div class="form-group" id="doctorGroup">
+                <label>Bác sĩ phụ trách</label>
+                <select id="doctorId" class="form-control">
+                    <option value="">-- Chọn bác sĩ --</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="statusGroup" style="display: none;">
+                <label>Trạng thái</label>
+                <select id="status" class="form-control">
+                    <option value="Đang chờ">Đang chờ</option>
+                    <option value="Đang khám">Đang khám</option>
+                    <option value="Đã khám">Đã khám</option>
+                    <option value="Đã hủy">Đã hủy</option>
+                    <option value="Vắng">Vắng</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Ghi chú</label>
+                <textarea id="note" class="form-control" rows="3"></textarea>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+                <button class="btn btn-primary" onclick="saveTracking()">Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRole = 'admin'; // Simulation, should get from session
+        let currentUser = { id: 1, fullname: 'Admin' };
+        
+        let trackings = [];
+        let doctors = [];
+        let currentTab = 'Đang chờ';
+        
+        // Simulating login check
+        async function checkLogin() {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const data = JSON.parse(userStr);
+                
+                // Chuẩn hóa role giống dashboard (ví dụ: 'Lễ tân' -> 'le-tan', 'Bác sĩ' -> 'bac-si', 'Admin' -> 'admin')
+                let normalized = data.role.toLowerCase()
+                    .replace(/đ/g, 'd')
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/\s+/g, '-');
+                    
+                // Fix cho trường hợp admin/le-tan
+                if (normalized === 'admin') currentRole = 'admin';
+                else if (normalized === 'le-tan') currentRole = 'le-tan';
+                else if (normalized === 'bac-si') currentRole = 'bac-si';
+                else currentRole = normalized;
+                
+                currentUser = data;
+                
+                // Ẩn menu admin-only nếu không phải Admin
+                if (data.role !== 'Admin') {
+                    
+            // Lọc menu theo role
+            const currentRoleLower = (currentUser.role || 'Admin').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+            if (currentRoleLower.includes('benh nhan')) {
+                document.querySelectorAll('.admin-only, .staff-only').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.menu-text').forEach(el => {
+                    if (el.textContent.includes('Đăng ký khám')) el.textContent = 'Lịch khám của tôi';
+                    if (el.textContent.includes('Theo dõi lịch khám')) el.textContent = 'Theo dõi lịch khám của tôi';
+                });
+            } else if (currentRoleLower.includes('bac si') || currentRoleLower.includes('le tan')) {
+                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+            }
+        
+                }
+            } else {
+                console.log("Chưa đăng nhập, sử dụng mock role admin");
+                currentRole = 'admin';
+                currentUser = { id: 1, fullname: 'Mock Admin', role: 'Admin' };
+            }
+            initUI();
+        }
+        
+        function initUI() {
+            if (currentRole === 'bac-si') {
+                document.getElementById('pageTitle').textContent = `Danh sách khám bệnh nhân (BS. ${currentUser.fullname})`;
+                document.getElementById('thActions').style.display = 'table-cell';
+            } else if (currentRole === 'admin' || currentRole === 'le-tan') {
+                document.getElementById('pageTitle').textContent = 'Theo dõi lịch khám';
+                document.getElementById('btnAdd').style.display = 'block';
+                document.getElementById('thActions').style.display = 'table-cell';
+            } else if (currentRole === 'benh-nhan') {
+                document.getElementById('pageTitle').textContent = 'Theo dõi lịch khám của tôi';
+                document.getElementById('thActions').style.display = 'table-cell';
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    if (btn.textContent === 'Hàng đợi') {
+                        btn.style.display = 'none';
+                    }
+                });
+            }
+            if (currentRole !== 'benh-nhan') {
+                loadDoctors();
+            }
+            loadData();
+        }
+        
+        async function loadDoctors() {
+            try {
+                const res = await fetch('/api/doctors', {
+                    headers: {
+                        'X-Role': encodeURIComponent(currentUser.role || ''),
+                        'X-User-Role': currentUser.role || '',
+                        'X-User-Name': currentUser.fullname || '',
+                        'X-User-Id': currentUser.id || ''
+                    }
+                });
+                if (res.ok) {
+                    doctors = await res.json();
+                    const sel = document.getElementById('doctorId');
+                    doctors.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = `${d.fullname} (${d.room || 'Chưa xếp phòng'})`;
+                        sel.appendChild(opt);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+        
+        async function loadData() {
+            try {
+                let url = `/api/trackings?role=${currentRole}`;
+                if (currentRole === 'bac-si') {
+                    // Cần tên đầy đủ của phòng khám để query
+                    url += `&doctorName=${encodeURIComponent(currentUser.fullname)}`; 
+                }
+                const res = await fetch(url, {
+                    headers: {
+                        'X-User-Role': currentUser.role || '',
+                        'X-User-Name': currentUser.fullname || '',
+                        'X-User-Id': currentUser.id || ''
+                    }
+                });
+                if (res.ok) {
+                    trackings = await res.json();
+                    console.log('Loaded trackings:', trackings);
+                    if (currentRole === 'bac-si') {
+                        alert('Debug - Số lượng lịch tracking lấy được: ' + trackings.length);
+                    }
+                    renderTable();
+                }
+            } catch (e) { console.error(e); }
+        }
+        
+        function switchTab(status) {
+            currentTab = status;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.includes(status) || 
+                    (status === 'Đang khám' && btn.textContent === 'Hàng đợi') ||
+                    (status === 'Đang chờ' && btn.textContent === 'Chờ tiếp nhận'));
+            });
+            renderTable();
+        }
+        
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            const filtered = trackings.filter(t => t.status === currentTab);
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; font-style:italic;">Không có bản ghi nào</td></tr>`;
+                return;
+            }
+            
+            filtered.forEach(t => {
+                let badgeClass = '';
+                if (t.status === 'Đang chờ') badgeClass = 'status-chờ';
+                else if (t.status === 'Đang khám') badgeClass = 'status-đang'; // Reuse 'đang' color
+                else if (t.status === 'Đã khám') badgeClass = 'status-đã';
+                else badgeClass = 'status-hủy';
+                
+                let actionsHtml = '';
+                if (currentRole === 'admin' || currentRole === 'le-tan') {
+                    actionsHtml = `
+                        <td style="white-space: nowrap;">
+                            <a class="action-link" onclick="openEditModal(${t.id})">Sửa</a>
+                            <a class="action-link action-delete" onclick="deleteTracking(${t.id})">Xóa</a>
+                        </td>
+                    `;
+                } else if (currentRole === 'bac-si') {
+                    // Doctor inline actions
+                    if (t.status === 'Đang chờ') {
+                        actionsHtml = `
+                            <td style="white-space: nowrap;">
+                                <a class="action-link" style="color: #10b981;" onclick="updateStatus(${t.id}, 'Đang khám', 'Tiếp nhận bệnh nhân ${t.patientName}?')">Tiếp nhận</a>
+                                <a class="action-link action-delete" onclick="updateStatus(${t.id}, 'Vắng', 'Bệnh nhân ${t.patientName} vắng mặt?')">Vắng mặt</a>
+                            </td>
+                        `;
+                    } else if (t.status === 'Đang khám') {
+                        actionsHtml = `
+                            <td style="white-space: nowrap;">
+                                <a class="action-link" style="color: #3b82f6; font-weight: 600;" onclick="updateStatus(${t.id}, 'Đã khám', 'Xác nhận đã khám xong cho ${t.patientName}?')">Đã khám xong</a>
+                            </td>
+                        `;
+                    } else {
+                        actionsHtml = `<td></td>`;
+                    }
+                } else if (currentRole === 'benh-nhan') {
+                    if (t.status === 'Đang chờ') {
+                        actionsHtml = `
+                            <td style="white-space: nowrap;">
+                                <a class="action-link action-delete" onclick="updateStatus(${t.id}, 'Đã hủy', 'Bạn muốn hủy lịch khám của bệnh nhân ${t.patientName}?')">Hủy lịch</a>
+                            </td>
+                        `;
+                    } else {
+                        actionsHtml = `<td></td>`;
+                    }
+                }
+                
+                const dateObj = t.updatedAt ? new Date(t.updatedAt) : new Date();
+                const timeStr = dateObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                
+                const row = `
+                    <tr>
+                        <td style="font-weight: 500;">${t.trackingCode}</td>
+                        <td>${t.patientName}</td>
+                        <td>${t.examinationDate}</td>
+                        <td>${t.room || 'Chưa xếp phòng'}</td>
+                    <td><span class="status-badge ${badgeClass}">${t.status}</span></td>
+                    <td>${timeStr}</td>
+                    ${(currentRole === 'admin' || currentRole === 'le-tan' || currentRole === 'benh-nhan' || currentRole === 'bac-si') ? `<td>${actionsHtml}</td>` : ''}
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', row);
+        });
+    }
+        
+        async function updateStatus(id, newStatus, confirmMsg) {
+            if (!confirm(confirmMsg)) return;
+            try {
+                const res = await fetch(`/api/trackings/${id}/status`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-User-Role': currentUser.role || '',
+                        'X-User-Name': currentUser.fullname || ''
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (res.ok) {
+                    loadData();
+                } else {
+                    const data = await res.json();
+                    alert(data.message || 'Có lỗi xảy ra');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Không thể kết nối đến server');
+            }
+        }
+        
+        // Form & Modal logic
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Thêm bản ghi theo dõi';
+            document.getElementById('trackingId').value = '';
+            document.getElementById('patientName').value = '';
+            document.getElementById('examDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('doctorId').value = '';
+            document.getElementById('note').value = '';
+            
+            document.getElementById('statusGroup').style.display = 'none'; // Luôn Đang chờ khi thêm mới
+            document.getElementById('doctorGroup').style.display = 'block';
+            
+            document.getElementById('trackingModal').style.display = 'block';
+        }
+        
+        function openEditModal(id) {
+            const t = trackings.find(x => x.id === id);
+            if (!t) return;
+            
+            document.getElementById('modalTitle').textContent = 'Sửa bản ghi: ' + t.trackingCode;
+            document.getElementById('trackingId').value = t.id;
+            document.getElementById('patientName').value = t.patientName;
+            document.getElementById('examDate').value = t.examinationDate;
+            document.getElementById('note').value = t.note || '';
+            
+            document.getElementById('statusGroup').style.display = 'block';
+            document.getElementById('doctorGroup').style.display = 'none';
+            
+            // Build status options based on THEODOI_NEXT rules
+            const statusSel = document.getElementById('status');
+            statusSel.innerHTML = '';
+            let allowed = [];
+            if (t.status === 'Đang chờ') allowed = ['Đang chờ', 'Đang khám', 'Vắng'];
+            else if (t.status === 'Đang khám') allowed = ['Đang khám', 'Đã khám', 'Vắng'];
+            else if (t.status === 'Đã khám') allowed = ['Đã khám'];
+            else if (t.status === 'Vắng') allowed = ['Vắng'];
+            else allowed = [t.status];
+            
+            allowed.forEach(st => {
+                const opt = document.createElement('option');
+                opt.value = st;
+                opt.textContent = st;
+                if (st === t.status) opt.selected = true;
+                statusSel.appendChild(opt);
+            });
+            
+            document.getElementById('trackingModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('trackingModal').style.display = 'none';
+        }
+        
+        async function saveTracking() {
+            const id = document.getElementById('trackingId').value;
+            const patientName = document.getElementById('patientName').value;
+            const examDate = document.getElementById('examDate').value;
+            const note = document.getElementById('note').value;
+            
+            if (!patientName || !examDate) {
+                alert("Vui lòng nhập tên bệnh nhân và ngày khám!");
+                return;
+            }
+            
+            const payload = {
+                patientName: patientName,
+                examinationDate: examDate,
+                note: note
+            };
+            
+            try {
+                let url = '/api/trackings';
+                let method = 'POST';
+                
+                if (id) {
+                    url += `/${id}`;
+                    method = 'PUT';
+                    payload.status = document.getElementById('status').value;
+                } else {
+                    const docId = document.getElementById('doctorId').value;
+                    if (docId) url += `?doctorId=${docId}`;
+                }
+                
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-User-Role': currentUser.role || '',
+                        'X-User-Name': currentUser.fullname || ''
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (res.ok) {
+                    closeModal();
+                    loadData();
+                } else {
+                    const err = await res.json();
+                    alert(err.message || "Có lỗi xảy ra!");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Lỗi kết nối server!");
+            }
+        }
+        
+        async function deleteTracking(id) {
+            if (!confirm("Bạn có chắc muốn xóa bản ghi này?")) return;
+            
+            try {
+                const res = await fetch(`/api/trackings/${id}`, { 
+                    method: 'DELETE',
+                    headers: {
+                        'X-User-Role': currentUser.role || '',
+                        'X-User-Name': currentUser.fullname || ''
+                    }
+                });
+                if (res.ok) {
+                    loadData();
+                } else {
+                    const err = await res.json();
+                    alert(err.message || "Có lỗi xảy ra khi xóa!");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Lỗi kết nối server!");
+            }
+        }
+        
+        checkLogin();
+    </script>
+
+  <script>
+    function logout(e) {
+      if (e) e.preventDefault();
+      localStorage.removeItem('user');
+      window.location.href = 'login.html';
+    }
+  </script>
+<script>
+
+    function setupDynamicUI() {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || !user.role) return;
+
+        let normalizedRole = user.role.toLowerCase()
+            .replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+
+        const titleMap = {
+            'admin': { title: 'Quản trị Viên', subtitle: 'Phòng Hành chính' },
+            'quan-ly-phong-kham': { title: 'Quản lý', subtitle: 'Phòng Khám Nha Khoa' },
+            'le-tan': { title: 'Lễ tân', subtitle: 'Quầy tiếp đón' },
+            'bac-si': { title: 'Bác sĩ', subtitle: 'Chuyên môn' },
+            'benh-nhan': { title: 'Bệnh nhân', subtitle: 'Cổng thông tin' }
+        };
+
+        const allowedMenus = {
+            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts'],
+            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts'],
+            'le-tan': ['appointments', 'tracking', 'schedules'],
+            'bac-si': ['schedules', 'tracking'],
+            'benh-nhan': ['appointments']
+        };
+
+        const currentSettings = titleMap[normalizedRole] || { title: 'Hệ thống', subtitle: 'Người dùng' };
+        
+        const titleEl = document.getElementById('sidebarTitle');
+        const subtitleEl = document.getElementById('sidebarSubtitle');
+        if (titleEl) titleEl.innerText = currentSettings.title;
+        if (subtitleEl) subtitleEl.innerText = currentSettings.subtitle;
+
+        const allowed = allowedMenus[normalizedRole] || [];
+        document.querySelectorAll('#sidebarNav .nav-item[data-menu]').forEach(el => {
+            const menuId = el.getAttribute('data-menu');
+            if (!allowed.includes(menuId)) {
+                el.style.display = 'none';
+            } else {
+                el.style.display = 'flex';
+                // Set active class if this is the current page
+                if (window.location.href.includes(menuId + '.html')) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            }
+        });
+    }
+
+</script>
+<script>document.addEventListener('DOMContentLoaded', setupDynamicUI);</script>
+</body>
+</html>
+
