@@ -264,6 +264,9 @@
                 });
             } else if (currentRoleLower.includes('bac si') || currentRoleLower.includes('le tan')) {
                 document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                if (currentRoleLower.includes('le tan')) {
+                    document.querySelectorAll('[data-menu="tracking"]').forEach(el => el.style.display = 'none');
+                }
             }
         
                 }
@@ -613,7 +616,7 @@
         const allowedMenus = {
             'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts'],
             'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts'],
-            'le-tan': ['appointments', 'tracking', 'schedules'],
+            'le-tan': ['appointments', 'schedules'],
             'bac-si': ['schedules', 'tracking'],
             'benh-nhan': ['appointments']
         };

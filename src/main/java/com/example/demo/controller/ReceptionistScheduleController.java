@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.DoctorSchedule;
-import com.example.demo.service.DoctorScheduleService;
+import com.example.demo.entity.ReceptionistSchedule;
+import com.example.demo.service.ReceptionistScheduleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -12,33 +12,33 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/schedules")
-public class DoctorScheduleController {
+@RequestMapping("/api/schedules/receptionists")
+public class ReceptionistScheduleController {
 
     @Autowired
-    private DoctorScheduleService scheduleService;
+    private ReceptionistScheduleService scheduleService;
 
     @GetMapping
     public ResponseEntity<?> getSchedules(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) Long userId,
             @RequestParam String role) {
-        return ResponseEntity.ok(scheduleService.getSchedules(start, end, doctorId, role));
+        return ResponseEntity.ok(scheduleService.getSchedules(start, end, userId, role));
     }
 
     @PostMapping("/toggle-bulk")
-    public ResponseEntity<?> toggleBulkDoctors(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> toggleBulkReceptionists(@RequestBody Map<String, Object> body) {
         try {
-            List<Number> rawIds = (List<Number>) body.get("doctorIds");
+            List<Number> rawIds = (List<Number>) body.get("userIds");
             if (rawIds == null || rawIds.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng tích chọn ít nhất một bác sĩ từ danh sách bên phải để xếp ca trực!"));
+                return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng tích chọn ít nhất một Lễ tân từ danh sách bên phải để xếp ca trực!"));
             }
-            List<Long> doctorIds = rawIds.stream().map(Number::longValue).collect(java.util.stream.Collectors.toList());
+            List<Long> userIds = rawIds.stream().map(Number::longValue).collect(java.util.stream.Collectors.toList());
             LocalDate date = LocalDate.parse((String) body.get("date"));
             String shiftType = (String) body.get("shiftType");
             
-            scheduleService.toggleBulkDoctors(doctorIds, date, shiftType);
+            scheduleService.toggleBulkReceptionists(userIds, date, shiftType);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (RuntimeException e) {
             String msg = e.getMessage() != null ? e.getMessage() : "Lỗi hệ thống: " + e.toString();
@@ -47,13 +47,13 @@ public class DoctorScheduleController {
     }
 
     @PostMapping("/toggle-self")
-    public ResponseEntity<?> toggleDoctorSelf(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> toggleReceptionistSelf(@RequestBody Map<String, Object> body) {
         try {
-            Long doctorId = Long.valueOf(body.get("doctorId").toString());
+            Long userId = Long.valueOf(body.get("userId").toString());
             LocalDate date = LocalDate.parse((String) body.get("date"));
             String shiftType = (String) body.get("shiftType");
             
-            scheduleService.toggleDoctorSelf(doctorId, date, shiftType);
+            scheduleService.toggleReceptionistSelf(userId, date, shiftType);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             String msg = e.getMessage() != null ? e.getMessage() : "Lỗi hệ thống: " + e.toString();
@@ -64,15 +64,15 @@ public class DoctorScheduleController {
     @PostMapping("/toggle-week")
     public ResponseEntity<?> toggleWeek(@RequestBody Map<String, Object> body) {
         try {
-            List<Number> rawIds = (List<Number>) body.get("doctorIds");
+            List<Number> rawIds = (List<Number>) body.get("userIds");
             if (rawIds == null || rawIds.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng tích chọn ít nhất một bác sĩ từ danh sách bên phải để xếp ca trực!"));
+                return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng tích chọn ít nhất một Lễ tân từ danh sách bên phải để xếp ca trực!"));
             }
-            List<Long> doctorIds = rawIds.stream().map(Number::longValue).collect(java.util.stream.Collectors.toList());
+            List<Long> userIds = rawIds.stream().map(Number::longValue).collect(java.util.stream.Collectors.toList());
             LocalDate startDate = LocalDate.parse((String) body.get("startDate"));
             String shiftType = (String) body.get("shiftType");
             
-            scheduleService.toggleDoctorWeek(doctorIds, startDate, shiftType);
+            scheduleService.toggleReceptionistWeek(userIds, startDate, shiftType);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (RuntimeException e) {
             String msg = e.getMessage() != null ? e.getMessage() : "Lỗi hệ thống: " + e.toString();
@@ -92,9 +92,9 @@ public class DoctorScheduleController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> removeDoctorFromShift(@PathVariable Long id) {
+    public ResponseEntity<?> removeReceptionistFromShift(@PathVariable Long id) {
         try {
-            scheduleService.removeDoctorFromShift(id);
+            scheduleService.removeReceptionistFromShift(id);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             String msg = e.getMessage() != null ? e.getMessage() : "Lỗi hệ thống: " + e.toString();

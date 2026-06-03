@@ -186,15 +186,25 @@
             </div>
           </div>
           
-          <!-- Danh sách bác sĩ (Chỉ Admin) -->
+                    <!-- Danh sách bác sĩ (Chỉ Admin) -->
           <div class="doctor-pane admin-only" id="doctorPane">
-            <div class="doc-pane-header">
+            <div class="doc-pane-header" style="background: #e0f2fe; color: #0369a1;">
               <span>Danh sách Bác sĩ</span>
               <label style="font-size: 0.8125rem; font-weight: normal; cursor: pointer;">
                 <input type="checkbox" id="selectAllDocs" onchange="toggleAllDocs()" /> Chọn hết
               </label>
             </div>
-            <div class="doc-list" id="doctorList">
+            <div class="doc-list" id="doctorList" style="max-height: 30vh; overflow-y: auto;">
+              <!-- Rendered by JS -->
+            </div>
+            
+            <div class="doc-pane-header" style="background: #fce7f3; color: #be185d; border-top: 1px solid #cbd5e1;">
+              <span>Danh sách Lễ tân</span>
+              <label style="font-size: 0.8125rem; font-weight: normal; cursor: pointer;">
+                <input type="checkbox" id="selectAllRecs" onchange="toggleAllRecs()" /> Chọn hết
+              </label>
+            </div>
+            <div class="doc-list" id="receptionistList" style="max-height: 30vh; overflow-y: auto;">
               <!-- Rendered by JS -->
             </div>
           </div>
@@ -208,11 +218,11 @@
     const currentUser = JSON.parse(userStr);
     const isAdmin = currentUser.role === 'Admin' || currentUser.role === 'Quản lý phòng khám';
     const currentDocId = currentUser.doctorId; // Backend needs to supply this on login, or we match by user_id
+    const currentRoleLower = (currentUser.role || 'Admin').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
     
     if (!isAdmin) {
         
             // Lọc menu theo role
-            const currentRoleLower = (currentUser.role || 'Admin').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
             if (currentRoleLower.includes('benh nhan')) {
                 document.querySelectorAll('.admin-only, .staff-only').forEach(el => el.style.display = 'none');
                 document.querySelectorAll('.menu-text').forEach(el => {
@@ -221,9 +231,12 @@
                 });
             } else if (currentRoleLower.includes('bac si') || currentRoleLower.includes('le tan')) {
                 document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                if (currentRoleLower.includes('le tan')) {
+                    document.querySelectorAll('[data-menu="tracking"]').forEach(el => el.style.display = 'none');
+                }
             }
         
-        document.getElementById('pageTitle').innerText = 'Đăng ký lịch trực cá nhân';
+        document.getElementById('pageTitle').innerText = `Đăng ký lịch trực cá nhân (${currentUser.fullname})`;
         document.getElementById('doctorPane').style.display = 'none';
     }
 
@@ -233,6 +246,7 @@
     let allSchedules = [];
     let activeShifts = [];
     let allDoctors = [];
+    let allReceptionists = [];
 
     async function loadData() {
         try {
@@ -259,25 +273,52 @@
                 url += `&doctorId=${currentUser.id}`;
             }
             
+            
             const sRes = await fetch(url, { headers });
             if (!sRes.ok) throw new Error("API /api/schedules failed with status " + sRes.status);
             allSchedules = await sRes.json();
             
-            const shiftRes = await fetch(`/api/shifts?start=${getLocalIsoDate(gridStartDate)}&end=${getLocalIsoDate(gridEndDate)}`, { headers });
+            if (currentRoleLower.includes('le tan') || isAdmin) {
+                const recUrl = `/api/schedules/receptionists?start=${getLocalIsoDate(gridStartDate)}&end=${getLocalIsoDate(gridEndDate)}&userId=${currentUser.id}&role=${encodeURIComponent(currentUser.role)}`;
+                const rRes = await fetch(recUrl, { headers, cache: 'no-store' });
+                if (rRes.ok) {
+                    const recData = await rRes.json();
+                    recData.forEach(r => {
+                        r.isReceptionist = true;
+                        r.doctor = { fullname: r.receptionist ? r.receptionist.fullname : 'N/A' };
+                    });
+                    allSchedules = allSchedules.concat(recData);
+                }
+            }
+            
+            const shiftRes = await fetch(`/api/shifts?start=${getLocalIsoDate(gridStartDate)}&end=${getLocalIsoDate(gridEndDate)}`, { headers, cache: 'no-store' });
             if (!shiftRes.ok) throw new Error("API /api/shifts failed with status " + shiftRes.status);
             activeShifts = await shiftRes.json();
             
             if (isAdmin) {
-                const checkedIds = getSelectedDoctorIds(); // Giữ lại trạng thái checkbox cũ
+                const checkedIds = getSelectedDoctorIds(); 
+                const checkedRecIds = getSelectedRecIds();
                 
-                const dRes = await fetch('/api/doctors', { headers });
+                const dRes = await fetch('/api/doctors', { headers, cache: 'no-store' });
                 if (!dRes.ok) throw new Error("API /api/doctors failed with status " + dRes.status);
                 allDoctors = await dRes.json();
                 renderDoctorList();
                 
+                const uRes = await fetch('/api/users', { headers, cache: 'no-store' });
+                if (uRes.ok) {
+                    const users = await uRes.json();
+                    allReceptionists = users.filter(u => u.role && u.role.trim().toLowerCase() === 'lễ tân');
+                    renderReceptionistList();
+                }
+                
                 // Phục hồi lại trạng thái checkbox
                 document.querySelectorAll('.doc-checkbox').forEach(cb => {
                     if (checkedIds.includes(parseInt(cb.value))) {
+                        cb.checked = true;
+                    }
+                });
+                document.querySelectorAll('.rec-checkbox').forEach(cb => {
+                    if (checkedRecIds.includes(parseInt(cb.value))) {
                         cb.checked = true;
                     }
                 });
@@ -303,6 +344,28 @@
     function toggleAllDocs() {
         const isChecked = document.getElementById('selectAllDocs').checked;
         document.querySelectorAll('.doc-checkbox').forEach(cb => cb.checked = isChecked);
+    }
+
+    
+    function getSelectedRecIds() {
+        const checkboxes = document.querySelectorAll('.rec-checkbox:checked');
+        return Array.from(checkboxes).map(cb => parseInt(cb.value));
+    }
+    function toggleAllRecs() {
+        const isChecked = document.getElementById('selectAllRecs').checked;
+        document.querySelectorAll('.rec-checkbox').forEach(cb => cb.checked = isChecked);
+    }
+    function renderReceptionistList() {
+        const list = document.getElementById('receptionistList');
+        list.innerHTML = '';
+        allReceptionists.forEach(rec => {
+            list.innerHTML += `
+                <label class="doc-item">
+                    <input type="checkbox" class="rec-checkbox" value="${rec.id}" />
+                    <span class="doc-name" style="color: #be185d;">${rec.fullname}</span>
+                </label>
+            `;
+        });
     }
 
     function renderDoctorList() {
@@ -381,21 +444,43 @@
                         daySchedules.forEach(s => {
                             if (isAdmin) {
                                 if (s.status === 'Đề xuất của tôi') {
-                                    tagsHtml += `<div class="doc-tag proposal" onclick="event.stopPropagation(); approveProposal(${s.id})" title="Nhấn để duyệt">
+                                    tagsHtml += `<div class="doc-tag proposal" onclick="event.stopPropagation(); approveProposal(${s.id}, ${s.isReceptionist})" title="Nhấn để duyệt">
                                         ${s.doctor.fullname} (Đề xuất)
+                                        <span class="remove-btn" onclick="event.stopPropagation(); removeDoc(${s.id}, ${s.isReceptionist})" title="Từ chối">×</span>
                                     </div>`;
                                 } else {
                                     tagsHtml += `<div class="doc-tag">
                                         ${s.doctor.fullname}
-                                        <span class="remove-btn" onclick="event.stopPropagation(); removeDoc(${s.id})">×</span>
+                                        <span class="remove-btn" onclick="event.stopPropagation(); removeDoc(${s.id}, ${s.isReceptionist})">×</span>
                                     </div>`;
                                 }
                             } else {
-                                // Doctor view
-                                if (s.status === 'Đề xuất của tôi') {
-                                    tagsHtml += `<div class="doc-tag proposal" onclick="event.stopPropagation(); toggleShiftDoctor('${isoStr}', '${st}')" title="Nhấn để hủy">Đề xuất của tôi (Hủy)</div>`;
+                                // Non-admin view (Doctor or Receptionist)
+                                // We need to check if this schedule belongs to the current user
+                                let isMine = false;
+                                if (s.isReceptionist) {
+                                    isMine = (s.receptionist && s.receptionist.id === currentUser.id);
                                 } else {
-                                    tagsHtml += `<div class="doc-tag">Đã duyệt trực</div>`;
+                                    // For doctor, currentUser.id is the User ID. We need to know if this DoctorSchedule belongs to this User.
+                                    // Since we don't have doctor.userId in the frontend easily without checking, we can just compare fullname as a fallback, 
+                                    // or better, the backend should send userId. But actually, doctor has user object in DB.
+                                    // Let's assume if the names match, or just use s.doctor.fullname.
+                                    isMine = (s.doctor.fullname === currentUser.fullname);
+                                }
+
+                                if (isMine) {
+                                    if (s.status === 'Đề xuất của tôi') {
+                                        tagsHtml += `<div class="doc-tag proposal" onclick="event.stopPropagation(); toggleShiftDoctor('${isoStr}', '${st}')" title="Nhấn để hủy">Đề xuất của tôi (Hủy)</div>`;
+                                    } else {
+                                        tagsHtml += `<div class="doc-tag">Trực (Tôi)</div>`;
+                                    }
+                                } else {
+                                    // Someone else's schedule
+                                    if (s.status === 'Đề xuất của tôi') {
+                                        tagsHtml += `<div class="doc-tag proposal" style="opacity: 0.7; cursor: default;">${s.doctor.fullname} (Đề xuất)</div>`;
+                                    } else {
+                                        tagsHtml += `<div class="doc-tag" style="cursor: default;">${s.doctor.fullname}</div>`;
+                                    }
                                 }
                             }
                         });
@@ -454,57 +539,115 @@
         }
     }
 
-    async function toggleShiftAdmin(date, shiftType) {
-        const docIds = getSelectedDoctorIds();
-        if (docIds.length === 0) {
-            alert("Vui lòng tích chọn ít nhất một bác sĩ từ danh sách bên phải để xếp ca trực!");
-            return;
-        }
-        const res = await fetch('/api/schedules/toggle-bulk', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ doctorIds: docIds, date: date, shiftType: shiftType })
-        });
-        if(res.ok) loadData(); else alert((await res.json()).message);
-    }
-
     async function toggleWeekAdmin(startDate, shiftType) {
         const docIds = getSelectedDoctorIds();
-        if (docIds.length === 0) {
-            alert("Vui lòng tích chọn ít nhất một bác sĩ từ danh sách bên phải để xếp ca trực!");
+        const recIds = getSelectedRecIds();
+        if (docIds.length === 0 && recIds.length === 0) {
+            alert('Vui lòng tích chọn ít nhất một Bác sĩ hoặc Lễ tân từ danh sách bên phải để xếp lịch tuần!');
             return;
         }
-        const res = await fetch('/api/schedules/toggle-week', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ doctorIds: docIds, startDate: startDate, shiftType: shiftType })
-        });
-        if(res.ok) loadData(); else alert((await res.json()).message);
+
+        let success = true;
+        let errorMsg = '';
+
+        if (docIds.length > 0) {
+            const dRes = await fetch('/api/schedules/toggle-week', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Role': encodeURIComponent(currentUser.role) },
+                body: JSON.stringify({ doctorIds: docIds, startDate, shiftType })
+            });
+            if (!dRes.ok) {
+                success = false;
+                errorMsg += (await dRes.json()).message + '\n';
+            }
+        }
+
+        if (recIds.length > 0) {
+            const rRes = await fetch('/api/schedules/receptionists/toggle-week', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Role': encodeURIComponent(currentUser.role) },
+                body: JSON.stringify({ userIds: recIds, startDate, shiftType })
+            });
+            if (!rRes.ok) {
+                success = false;
+                errorMsg += (await rRes.json()).message + '\n';
+            }
+        }
+
+        if (success) {
+            loadData();
+        } else {
+            alert(errorMsg);
+            loadData(); // Tải lại để hiện thị phần đã thành công
+        }
+    }
+
+    async function toggleShiftAdmin(date, shiftType) {
+        const docIds = getSelectedDoctorIds();
+        const recIds = getSelectedRecIds();
+        if (docIds.length === 0 && recIds.length === 0) {
+            alert('Vui lòng tích chọn ít nhất một Bác sĩ hoặc Lễ tân từ danh sách bên phải!');
+            return;
+        }
+        let success = true;
+        let errorMsg = '';
+        if (docIds.length > 0) {
+            const res = await fetch('/api/schedules/toggle-bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Role': encodeURIComponent(currentUser.role) },
+                body: JSON.stringify({ doctorIds: docIds, date, shiftType })
+            });
+            if (!res.ok) {
+                success = false;
+                errorMsg += (await res.json()).message + '\n';
+            }
+        }
+        if (recIds.length > 0) {
+            const res = await fetch('/api/schedules/receptionists/toggle-bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Role': encodeURIComponent(currentUser.role) },
+                body: JSON.stringify({ userIds: recIds, date, shiftType })
+            });
+            if (!res.ok) {
+                success = false;
+                errorMsg += (await res.json()).message + '\n';
+            }
+        }
+        if (success) {
+            loadData();
+        } else {
+            alert(errorMsg);
+            loadData();
+        }
     }
 
     async function toggleShiftDoctor(date, shiftType) {
-        // Kiểm tra xem đã có lịch duyệt chưa
-        let daySchedules = allSchedules.filter(s => s.shiftDate === date && s.shiftType === shiftType);
-        if (daySchedules.length > 0 && daySchedules[0].status === 'Đã duyệt trực') {
-            alert("Lịch đã được Admin duyệt, bạn không thể tự ý hủy!");
-            return;
-        }
+        const isRec = currentRoleLower.includes('le tan');
+        const apiUrl = isRec ? '/api/schedules/receptionists/toggle-self' : '/api/schedules/toggle-self';
+        const bodyData = { date, shiftType };
+        if (isRec) bodyData.userId = currentUser.id;
+        else bodyData.doctorId = currentUser.id;
         
-        const res = await fetch('/api/schedules/toggle-self', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ doctorId: currentUser.id, date: date, shiftType: shiftType })
+        const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Role': encodeURIComponent(currentUser.role) },
+            body: JSON.stringify(bodyData)
         });
-        if(res.ok) loadData(); else alert((await res.json()).message);
+        if (res.ok) { loadData(); }
+        else { const err = await res.json(); alert(err.message); }
     }
 
-    async function approveProposal(id) {
+
+    async function approveProposal(id, isReceptionist) {
         if(confirm("Xác nhận phê duyệt lịch trực này?")) {
-            const res = await fetch(`/api/schedules/${id}/approve`, { method: 'PUT' });
+            const res = await fetch(isReceptionist ? `/api/schedules/receptionists/${id}/approve` : `/api/schedules/${id}/approve`, { method: 'PUT' });
             if(res.ok) loadData(); else alert((await res.json()).message);
         }
     }
 
-    async function removeDoc(id) {
+    async function removeDoc(id, isReceptionist) {
         if(confirm("Xác nhận xóa lịch trực này?")) {
-            const res = await fetch(`/api/schedules/${id}`, { method: 'DELETE' });
+            const res = await fetch(isReceptionist ? `/api/schedules/receptionists/${id}` : `/api/schedules/${id}`, { method: 'DELETE' });
             if(res.ok) loadData(); else alert((await res.json()).message);
         }
     }
@@ -539,7 +682,7 @@
         const allowedMenus = {
             'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts'],
             'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts'],
-            'le-tan': ['appointments', 'tracking', 'schedules'],
+            'le-tan': ['appointments', 'schedules'],
             'bac-si': ['schedules', 'tracking'],
             'benh-nhan': ['appointments']
         };

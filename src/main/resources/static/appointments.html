@@ -143,7 +143,7 @@
     <div class="content-shell">
         <div class="crumb">Hệ thống / <strong>Đăng ký khám</strong></div>
         <div class="page-head">
-            <h1>Lịch khám của tôi</h1>
+            <h1 id="pageTitle">Danh sách lịch hẹn</h1>
             <button class="btn btn-primary" onclick="openAddModal()">+ Đặt lịch khám mới</button>
         </div>
         
@@ -177,11 +177,11 @@
         <div style="display: flex; gap: 16px;">
             <div class="form-group" style="flex: 1;">
                 <label>Họ tên bệnh nhân</label>
-                <input type="text" id="patientName" class="form-control" disabled>
+                <input type="text" id="patientName" class="form-control">
             </div>
             <div class="form-group" style="flex: 1;">
                 <label>Số điện thoại</label>
-                <input type="text" id="patientPhone" class="form-control" disabled>
+                <input type="text" id="patientPhone" class="form-control">
             </div>
         </div>
         
@@ -282,6 +282,7 @@
     
     // Lọc menu theo role
     if (currentRoleLower.includes('benh nhan')) {
+        document.getElementById('pageTitle').textContent = 'Lịch khám của tôi';
         document.querySelectorAll('.admin-only, .staff-only').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.menu-text').forEach(el => {
             if (el.textContent.includes('Đăng ký khám')) el.textContent = 'Lịch khám của tôi';
@@ -289,6 +290,9 @@
         });
     } else if (currentRoleLower.includes('bac si') || currentRoleLower.includes('le tan')) {
         document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+        if (currentRoleLower.includes('le tan')) {
+            document.querySelectorAll('[data-menu="tracking"]').forEach(el => el.style.display = 'none');
+        }
     }
 
     function logout(e) {
@@ -454,8 +458,19 @@
     function openAddModal() {
         document.getElementById('modalTitle').textContent = 'Đặt lịch khám mới';
         document.getElementById('appId').value = '';
-        document.getElementById('patientName').value = currentRoleLower.includes('benh nhan') ? currentUser.fullname : '';
-        document.getElementById('patientPhone').value = currentRoleLower.includes('benh nhan') ? (currentUser.phone || '0900000000') : '';
+        
+        if (currentRoleLower.includes('benh nhan')) {
+            document.getElementById('patientName').value = currentUser.fullname;
+            document.getElementById('patientName').disabled = true;
+            document.getElementById('patientPhone').value = currentUser.phone || '0900000000';
+            document.getElementById('patientPhone').disabled = true;
+        } else {
+            document.getElementById('patientName').value = '';
+            document.getElementById('patientName').disabled = false;
+            document.getElementById('patientPhone').value = '';
+            document.getElementById('patientPhone').disabled = false;
+        }
+        
         document.getElementById('doctorId').value = '';
         document.getElementById('room').value = '';
         document.getElementById('selectedDate').dataset.temp = '';
@@ -502,6 +517,14 @@
         document.getElementById('appId').value = a.id;
         document.getElementById('patientName').value = a.patientName;
         document.getElementById('patientPhone').value = a.patientPhone || '';
+        
+        if (currentRoleLower.includes('benh nhan')) {
+            document.getElementById('patientName').disabled = true;
+            document.getElementById('patientPhone').disabled = true;
+        } else {
+            document.getElementById('patientName').disabled = false;
+            document.getElementById('patientPhone').disabled = false;
+        }
         document.getElementById('doctorId').value = a.doctorId;
         document.getElementById('room').value = a.room || '';
         document.getElementById('selectedDate').dataset.temp = a.examinationDate;
@@ -739,7 +762,7 @@
         const allowedMenus = {
             'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts'],
             'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts'],
-            'le-tan': ['appointments', 'tracking', 'schedules'],
+            'le-tan': ['appointments', 'schedules'],
             'bac-si': ['schedules', 'tracking'],
             'benh-nhan': ['appointments']
         };

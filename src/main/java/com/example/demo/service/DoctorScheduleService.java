@@ -29,15 +29,8 @@ public class DoctorScheduleService {
     private com.example.demo.repository.ShiftRepository shiftRepo;
 
     public List<DoctorSchedule> getSchedules(LocalDate start, LocalDate end, Long userId, String role) {
-        if ("Bác sĩ".equalsIgnoreCase(role) && userId != null) {
-            Doctor doc = doctorRepo.findByUserId(userId).orElse(null);
-            if (doc != null) {
-                return scheduleRepo.findByDoctor_IdAndShiftDateBetween(doc.getId(), start, end);
-            } else {
-                return java.util.Collections.emptyList();
-            }
-        }
-        // Admin lấy tất cả
+        // Cho phép tất cả các role (Admin, Bác sĩ, Lễ tân) xem toàn bộ lịch trực
+        // Việc cấp quyền thêm/xóa/sửa (nhấp vào) sẽ do frontend kiểm soát (isMine)
         return scheduleRepo.findByShiftDateBetween(start, end);
     }
 
@@ -54,7 +47,13 @@ public class DoctorScheduleService {
         for (Long docId : doctorIds) {
             Optional<DoctorSchedule> existing = scheduleRepo.findByDoctor_IdAndShiftDateAndShiftType(docId, date, shiftType);
             if (existing.isPresent()) {
-                scheduleRepo.delete(existing.get());
+                DoctorSchedule ds = existing.get();
+                if ("Đề xuất của tôi".equals(ds.getStatus())) {
+                    ds.setStatus("Đã duyệt trực");
+                    scheduleRepo.save(ds);
+                } else {
+                    scheduleRepo.delete(ds);
+                }
             } else {
                 Doctor doc = doctorRepo.findById(docId).orElse(null);
                 if (doc != null) {
@@ -106,7 +105,15 @@ public class DoctorScheduleService {
                 if (shiftRepo.findByShiftDateAndShiftType(currentDate, shiftType).isPresent()) {
                     for (Long docId : doctorIds) {
                         Optional<DoctorSchedule> existing = scheduleRepo.findByDoctor_IdAndShiftDateAndShiftType(docId, currentDate, shiftType);
-                        if (!existing.isPresent()) {
+                        if (existing.isPresent()) {
+                            DoctorSchedule ds = existing.get();
+                            if ("Đề xuất của tôi".equals(ds.getStatus())) {
+                                ds.setStatus("Đã duyệt trực");
+                                scheduleRepo.save(ds);
+                            } else {
+                                scheduleRepo.delete(ds);
+                            }
+                        } else {
                             Doctor doc = doctorRepo.findById(docId).orElse(null);
                             if (doc != null) {
                                 DoctorSchedule ds = new DoctorSchedule();
@@ -116,8 +123,6 @@ public class DoctorScheduleService {
                                 ds.setStatus("Đã duyệt trực");
                                 scheduleRepo.save(ds);
                             }
-                        } else {
-                             scheduleRepo.delete(existing.get());
                         }
                     }
                 }
