@@ -24,6 +24,12 @@ public class DataSeeder implements CommandLineRunner {
     private ServicePriceRepository priceRepository;
     
     @Autowired
+    private com.example.demo.repository.UserRepository userRepository;
+    
+    @Autowired
+    private com.example.demo.repository.DoctorRepository doctorRepository;
+    
+    @Autowired
     private EntityManager entityManager;
 
     @Override
@@ -38,6 +44,58 @@ public class DataSeeder implements CommandLineRunner {
             
             seedServices();
             System.out.println("Khởi tạo xong 25 dịch vụ mặc định!");
+        }
+        
+        if (userRepository.count() == 0) {
+            System.out.println("Đang khởi tạo tài khoản mẫu (1 Admin, 5 Bác sĩ, 2 Lễ tân)...");
+            seedUsers();
+            System.out.println("Khởi tạo xong tài khoản mẫu!");
+        }
+    }
+
+    private void seedUsers() {
+        // 1. Admin
+        com.example.demo.entity.User admin = new com.example.demo.entity.User();
+        admin.setUsername("admin");
+        admin.setPassword("admin123");
+        admin.setFullname("Quản trị viên hệ thống");
+        admin.setRole("Admin");
+        admin.setStatus("Hoạt động");
+        userRepository.save(admin);
+
+        // 2. 5 Bác sĩ
+        for (int i = 1; i <= 5; i++) {
+            com.example.demo.entity.User userDoc = new com.example.demo.entity.User();
+            userDoc.setUsername("bacsi" + i);
+            userDoc.setPassword("123456");
+            userDoc.setFullname("Bác sĩ Nguyễn Văn " + (char) ('A' + i - 1));
+            userDoc.setRole("Bác sĩ");
+            userDoc.setStatus("Hoạt động");
+            com.example.demo.entity.User savedUser = userRepository.save(userDoc);
+
+            com.example.demo.entity.Doctor doc = new com.example.demo.entity.Doctor();
+            doc.setCode(String.format("BS%03d", i));
+            doc.setFullname(savedUser.getFullname());
+            doc.setDateOfBirth(LocalDate.of(1980 + i, i, i));
+            doc.setPhone("090" + i + "123456");
+            doc.setEmail("bacsi" + i + "@nhakhoa.com");
+            doc.setWorkplace("Phòng khám chính");
+            doc.setDegree(i % 2 == 0 ? "Thạc sĩ" : "Bác sĩ CKI");
+            doc.setRoom("Phòng " + (100 + i));
+            doc.setUserId(savedUser.getId());
+            doc.setStatus("Hoạt động");
+            doctorRepository.save(doc);
+        }
+
+        // 3. 2 Lễ tân
+        for (int i = 1; i <= 2; i++) {
+            com.example.demo.entity.User userRec = new com.example.demo.entity.User();
+            userRec.setUsername("letan" + i);
+            userRec.setPassword("123456");
+            userRec.setFullname("Lễ tân Trần Thị " + (char) ('A' + i - 1));
+            userRec.setRole("Lễ tân");
+            userRec.setStatus("Hoạt động");
+            userRepository.save(userRec);
         }
     }
 
