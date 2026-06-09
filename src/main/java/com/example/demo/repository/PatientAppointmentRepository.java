@@ -12,4 +12,9 @@ public interface PatientAppointmentRepository extends JpaRepository<PatientAppoi
     List<PatientAppointment> findByPatientName(String patientName);
 
     boolean existsByDoctorIdAndExaminationDateAndShiftTypeAndStatusIn(Long doctorId, LocalDate examinationDate, String shiftType, List<String> statuses);
+    
+    // Check-in search
+    List<PatientAppointment> findByPatientPhoneAndExaminationDateGreaterThanEqualOrderByExaminationDateAsc(String phone, LocalDate date);
+    List<PatientAppointment> findByPatientNameContainingIgnoreCaseAndExaminationDateGreaterThanEqualOrderByExaminationDateAsc(String name, LocalDate date);
+    List<PatientAppointment> findByExaminationDateAndStatusIn(LocalDate date, List<String> statuses);
 }

@@ -1252,7 +1252,11 @@
     </header>
 
     <nav class="nav" id="sidebarNav" aria-label="Menu chính">
-      <a href="appointments.html" class="nav-item" data-menu="appointments">
+            <a href="checkin.html" class="nav-item checkin-menu" data-menu="checkin">
+        <span class="icon" aria-hidden="true">📍</span>
+        <span class="menu-text">Tiếp đón (Check-in)</span>
+      </a>
+<a href="appointments.html" class="nav-item" data-menu="appointments">
         <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span>
         <span class="menu-text">Đăng ký khám</span>
       </a>
@@ -1585,9 +1589,9 @@
         };
 
         const allowedMenus = {
-            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts'],
-            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts'],
-            'le-tan': ['appointments', 'tracking', 'schedules'],
+            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking'],
+            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking'],
+            'le-tan': ['appointments', 'tracking', 'schedules', 'checkin'],
             'bac-si': ['schedules', 'tracking'],
             'benh-nhan': ['appointments']
         };

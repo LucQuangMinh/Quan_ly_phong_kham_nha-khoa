@@ -58,6 +58,11 @@
     .action-link { color: var(--primary); font-weight: 500; cursor: pointer; margin-right: 12px; text-decoration: none; }
     .action-delete { color: var(--danger); }
 
+    .tabs { display: flex; gap: 10px; border-bottom: 1px solid #e2e8f0; margin-bottom: 20px; }
+    .tab-btn { padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; font-size: 0.875rem; color: #64748b; }
+    .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+    .tab-btn:hover:not(.active) { color: #1e293b; border-bottom-color: #cbd5e1; }
+
     /* Modal */
     .modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.4); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal { background: #fff; width: 100%; max-width: 800px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 24px; max-height: 90vh; overflow-y: auto; }
@@ -98,7 +103,11 @@
     </header>
 
     <nav class="nav" id="sidebarNav" aria-label="Menu chính">
-      <a href="appointments.html" class="nav-item" data-menu="appointments">
+            <a href="checkin.html" class="nav-item checkin-menu" data-menu="checkin">
+        <span class="icon" aria-hidden="true">📍</span>
+        <span class="menu-text">Tiếp đón (Check-in)</span>
+      </a>
+<a href="appointments.html" class="nav-item" data-menu="appointments">
         <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span>
         <span class="menu-text">Đăng ký khám</span>
       </a>
@@ -147,6 +156,14 @@
             <button class="btn btn-primary" onclick="openAddModal()">+ Đặt lịch khám mới</button>
         </div>
         
+        <div class="tabs" id="tabsContainer">
+            <button class="tab-btn active" onclick="switchTab('Đã đặt')">Đã đặt lịch</button>
+            <button class="tab-btn" onclick="switchTab('Hàng chờ')">Hàng chờ</button>
+            <button class="tab-btn" onclick="switchTab('Khám xong')">Khám xong</button>
+            <button class="tab-btn" onclick="switchTab('Đã hủy')">Đã hủy / Vắng</button>
+        </div>
+        
+
         <div class="table-container">
             <table>
                 <thead>
@@ -373,15 +390,33 @@
         renderTable();
     }
 
+    let currentTab = 'Đã đặt';
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        renderTable();
+    }
+
     function renderTable() {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
-        if (appointments.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Chưa có lịch khám nào.</td></tr>`;
+        
+        let filteredData = appointments.filter(a => {
+            if (currentTab === 'Đã đặt') return a.status === 'Đã đặt';
+            if (currentTab === 'Hàng chờ') return a.status === 'Đã xác nhận';
+            if (currentTab === 'Khám xong') return a.status === 'Khám xong' || a.status === 'Đã thanh toán';
+            if (currentTab === 'Đã hủy') return a.status === 'Hủy' || a.status === 'Vắng';
+            return true;
+        });
+
+        if (filteredData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Không có lịch hẹn nào.</td></tr>`;
             return;
         }
         
-        appointments.forEach(a => {
+        filteredData.forEach(a => {
             let docName = 'Không rõ';
             if (a.doctorId) {
                 const d = doctors.find(x => x.id === a.doctorId);
@@ -770,9 +805,9 @@
         };
 
         const allowedMenus = {
-            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts'],
-            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts'],
-            'le-tan': ['appointments', 'schedules'],
+            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking'],
+            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking'],
+            'le-tan': ['appointments', 'schedules', 'checkin'],
             'bac-si': ['schedules', 'tracking'],
             'benh-nhan': ['appointments']
         };

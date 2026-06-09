@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiếp đón bệnh nhân (Check-in)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+          --sidebar-bg: #f8fafc; --sidebar-border: #e2e8f0; --text-primary: #1e293b; --text-muted: #64748b;
+          --active-bg: #e8f1fe; --active-text: #2563eb; --hover-bg: #f1f5f9; --radius-item: 10px;
+          --primary: #2563eb; --primary-hover: #1d4ed8; --surface: #ffffff; --table-head: #f1f5f9;
+          --danger: #dc2626; --danger-bg: #fef2f2; --success: #10b981;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { margin: 0; min-height: 100vh; font-family: "Inter", system-ui, sans-serif; background: #fff; color: var(--text-primary); display: flex; }
+
+        .sidebar { width: 288px; min-height: 100vh; background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); padding: 20px 12px 24px; flex-shrink: 0; }
+        .sidebar-header { padding: 4px 10px 16px; border-bottom: 1px solid var(--sidebar-border); margin-bottom: 12px; }
+        .sidebar-header h1 { margin: 0; font-size: 1rem; font-weight: 700; }
+        .sidebar-header p { margin: 4px 0 0; font-size: 0.8125rem; color: var(--text-muted); }
+        .nav { display: flex; flex-direction: column; gap: 2px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-item); font-size: 0.875rem; font-weight: 500; color: var(--text-primary); text-decoration: none; background: transparent; width: 100%; text-align: left; cursor: pointer; }
+        .nav-item:hover { background: var(--hover-bg); }
+        .nav-item .icon { flex-shrink: 0; width: 22px; height: 22px; color: var(--text-muted); }
+        .nav-item.active { background: var(--active-bg); color: var(--active-text); }
+        .nav-item.active .icon { color: var(--active-text); }
+        
+        main { flex: 1; padding: 24px 32px 40px; background: #fafbfc; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .content-shell { max-width: 1400px; margin: 0 auto; width: 100%; height: 100%; display: flex; flex-direction: column; }
+        
+        .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-shrink: 0; }
+        .page-head h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+
+        .search-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px; display: flex; gap: 16px; align-items: flex-end; flex-shrink: 0; }
+        .form-group { flex: 1; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.875rem; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.875rem; }
+        .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: background 0.2s; white-space: nowrap; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .table-container { flex: 1; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: white; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.875rem; }
+        th { background: #f8fafc; font-weight: 600; color: #475569; position: sticky; top: 0; z-index: 10; }
+        tr:hover { background: #f1f5f9; }
+
+        .status-badge { padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 500; display: inline-block; }
+        .status-chưa-đến { background: #fef9c3; color: #854d0e; }
+        .status-đã-đến { background: #dbeafe; color: #1e40af; }
+        .status-khám-xong { background: #dcfce3; color: #166534; }
+        .status-đã-thanh-toán { background: #f3e8ff; color: #6b21a8; }
+        
+        .action-link { font-weight: 600; cursor: pointer; padding: 6px 12px; border-radius: 4px; display: inline-block; margin-right: 8px; border: 1px solid transparent; }
+        .action-checkin { color: var(--success); background: #ecfdf5; border-color: #a7f3d0; }
+        .action-checkin:hover { background: #d1fae5; }
+        .action-pay { color: var(--primary); background: #eff6ff; border-color: #bfdbfe; }
+        .action-pay:hover { background: #dbeafe; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar" aria-label="Điều hướng chính" id="dynamicSidebar">
+    <header class="sidebar-header">
+      <h1 id="sidebarTitle">Hệ thống Nha Khoa</h1>
+      <p id="sidebarSubtitle">Vai trò</p>
+    </header>
+
+    <nav class="nav" id="sidebarNav" aria-label="Menu chính">
+            <a href="checkin.html" class="nav-item checkin-menu" data-menu="checkin">
+        <span class="icon" aria-hidden="true">📍</span>
+        <span class="menu-text">Tiếp đón (Check-in)</span>
+      </a>
+<a href="appointments.html" class="nav-item" data-menu="appointments">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span>
+        <span class="menu-text">Đăng ký khám</span>
+      </a>
+      <a href="tracking.html" class="nav-item" data-menu="tracking">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg></span>
+        <span class="menu-text">Theo dõi lịch khám</span>
+      </a>
+      <a href="schedules.html" class="nav-item" data-menu="schedules">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span>
+        <span class="menu-text">Lịch trực bác sĩ</span>
+      </a>
+      <a href="doctors.html" class="nav-item" data-menu="doctors">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+        <span class="menu-text">Hồ sơ Bác sĩ</span>
+      </a>
+      <a href="users.html" class="nav-item" data-menu="users">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+        <span class="menu-text">Quản lý Người dùng</span>
+      </a>
+      <a href="services.html" class="nav-item" data-menu="services">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>
+        <span class="menu-text">Danh mục Dịch vụ</span>
+      </a>
+      
+      <a href="holidays.html" class="nav-item" data-menu="holidays">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg></span>
+        <span class="menu-text">Thiết lập ngày nghỉ</span>
+      </a>
+      <a href="shifts.html" class="nav-item" data-menu="shifts">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
+        <span class="menu-text">Thiết lập ca làm việc</span>
+      </a>
+      <div style="margin-top: 30px; border-top: 1px solid var(--sidebar-border); padding-top: 10px;"></div>
+      <a href="#" class="nav-item" onclick="logout(event)" style="color: #dc2626;">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
+        <span class="menu-text">Đăng xuất</span>
+      </a>
+    </nav>
+  </aside>
+
+    <main>
+        <div class="content-shell">
+            <div class="page-head">
+                <h1>Tiếp đón bệnh nhân (Check-in)</h1>
+            </div>
+
+            <div class="search-card">
+                <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="text" id="searchPhone" class="form-control" placeholder="Nhập SĐT bệnh nhân..." />
+                </div>
+                <div class="form-group">
+                    <label>Tên bệnh nhân</label>
+                    <input type="text" id="searchName" class="form-control" placeholder="Hoặc nhập tên bệnh nhân..." />
+                </div>
+                <button class="btn btn-primary" onclick="searchPatients()">Tìm kiếm</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã Lịch</th>
+                            <th>Bệnh nhân</th>
+                            <th>SĐT</th>
+                            <th>Ngày hẹn</th>
+                            <th>Ca</th>
+                            <th>Bác sĩ</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="8" style="text-align: center; color: #64748b;">Nhập thông tin và bấm tìm kiếm</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentUser = null;
+        let currentRoleLower = '';
+
+        window.onload = function() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = '/'; return; }
+            currentUser = JSON.parse(userStr);
+            currentRoleLower = (currentUser.role || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+            
+            if (!currentRoleLower.includes('le-tan') && !currentRoleLower.includes('le tan')) {
+                alert('Chỉ Lễ tân mới có quyền truy cập trang này!');
+                window.location.href = '/';
+                return;
+            }
+
+            
+            searchPatients();
+            setupDynamicUI();
+        };
+
+        
+
+        async function searchPatients() {
+            const phone = document.getElementById('searchPhone').value;
+            const name = document.getElementById('searchName').value;
+            
+            const params = new URLSearchParams();
+            if (phone) params.append('phone', phone);
+            if (name) params.append('name', name);
+
+            try {
+                const res = await fetch(`/api/checkin/search?${params.toString()}`, {
+                    headers: {
+                        'X-User-Role': encodeURIComponent(currentUser.role || '')
+                    }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    renderTable(data);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #64748b;">Không tìm thấy lịch hẹn nào</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                let badgeClass = 'status-chưa-đến';
+                let displayStatus = item.trackingStatus || item.appointmentStatus;
+                
+                if (displayStatus === 'Đã đến' || item.appointmentStatus === 'Đã xác nhận') {
+                    badgeClass = 'status-đã-đến';
+                    displayStatus = 'Đã đến';
+                }
+                if (item.appointmentStatus === 'Khám xong' || displayStatus === 'Đã khám') {
+                    badgeClass = 'status-khám-xong';
+                    displayStatus = 'Khám xong';
+                }
+                if (item.appointmentStatus === 'Đã thanh toán') {
+                    badgeClass = 'status-đã-thanh-toán';
+                    displayStatus = 'Đã thanh toán';
+                }
+
+                let actions = '';
+                if (item.trackingStatus === 'Chưa đến' && item.appointmentStatus !== 'Hủy') {
+                    actions = `<a class="action-link action-checkin" onclick="markArrived(${item.id})">✓ Đã đến</a>`;
+                } else if (displayStatus === 'Đã đến') {
+                    actions = `<span style="color: #64748b; font-style: italic; font-size: 0.8rem;">Đang chờ bác sĩ...</span>`;
+                } else if (displayStatus === 'Khám xong') {
+                    actions = `<a class="action-link action-pay" onclick="markPaid(${item.id})">💳 Xác nhận thanh toán</a>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight: 500;">${item.code}</td>
+                        <td>${item.patientName}</td>
+                        <td>${item.patientPhone}</td>
+                        <td>${item.examinationDate}</td>
+                        <td>${item.shiftType}</td>
+                        <td>${item.doctorName}</td>
+                        <td><span class="status-badge ${badgeClass}">${displayStatus}</span></td>
+                        <td>${actions}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function markArrived(id) {
+            if (!confirm('Xác nhận bệnh nhân đã đến phòng khám?')) return;
+            try {
+                const res = await fetch(`/api/checkin/${id}/arrived`, {
+                    method: 'PUT',
+                    headers: { 'X-User-Role': encodeURIComponent(currentUser.role || '') }
+                });
+                if (res.ok) {
+                    searchPatients();
+                } else {
+                    const err = await res.json();
+                    alert(err.message || 'Lỗi');
+                }
+            } catch (e) { alert('Lỗi kết nối'); }
+        }
+
+        async function markPaid(id) {
+            if (!confirm('Xác nhận bệnh nhân đã thanh toán chi phí?')) return;
+            try {
+                const res = await fetch(`/api/checkin/${id}/paid`, {
+                    method: 'PUT',
+                    headers: { 'X-User-Role': encodeURIComponent(currentUser.role || '') }
+                });
+                if (res.ok) {
+                    searchPatients();
+                } else {
+                    const err = await res.json();
+                    alert(err.message || 'Lỗi');
+                }
+            } catch (e) { alert('Lỗi kết nối'); }
+        }
+
+        function logout(e) {
+            e.preventDefault();
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+    
+function setupDynamicUI() {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || !user.role) return;
+
+        let normalizedRole = user.role.toLowerCase()
+            .replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+
+        const titleMap = {
+            'admin': { title: 'Quản trị Viên', subtitle: 'Phòng Hành chính' },
+            'quan-ly-phong-kham': { title: 'Quản lý', subtitle: 'Phòng Khám Nha Khoa' },
+            'le-tan': { title: 'Lễ tân', subtitle: 'Quầy tiếp đón' },
+            'bac-si': { title: 'Bác sĩ', subtitle: 'Chuyên môn' },
+            'benh-nhan': { title: 'Bệnh nhân', subtitle: 'Cổng thông tin' }
+        };
+
+        const allowedMenus = {
+            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking'],
+            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking'],
+            'le-tan': ['appointments', 'schedules', 'checkin'],
+            'bac-si': ['schedules', 'tracking'],
+            'benh-nhan': ['appointments']
+        };
+
+        const currentSettings = titleMap[normalizedRole] || { title: 'Hệ thống', subtitle: 'Người dùng' };
+        
+        const titleEl = document.getElementById('sidebarTitle');
+        const subtitleEl = document.getElementById('sidebarSubtitle');
+        if (titleEl) titleEl.innerText = currentSettings.title;
+        if (subtitleEl) subtitleEl.innerText = currentSettings.subtitle;
+
+        const allowed = allowedMenus[normalizedRole] || [];
+        document.querySelectorAll('#sidebarNav .nav-item[data-menu]').forEach(el => {
+            const menuId = el.getAttribute('data-menu');
+            if (!allowed.includes(menuId)) {
+                el.style.display = 'none';
+            } else {
+                el.style.display = 'flex';
+                // Set active class if this is the current page
+                if (window.location.href.includes(menuId + '.html')) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>

@@ -68,14 +68,12 @@ public class PatientAppointmentService {
         tracking.setExaminationDate(saved.getExaminationDate());
         
         // Trạng thái khởi tạo đồng bộ
-        if ("Đã đặt".equals(saved.getStatus())) {
-            tracking.setStatus("Đang chờ");
-        } else if ("Đã xác nhận".equals(saved.getStatus())) {
-            tracking.setStatus("Đã tiếp nhận");
+        if ("Đã đặt".equals(saved.getStatus()) || "Đã xác nhận".equals(saved.getStatus())) {
+            tracking.setStatus("Chưa đến");
         } else if ("Hủy".equals(saved.getStatus())) {
-            tracking.setStatus("Đã hủy");
+            tracking.setStatus("Lễ tân hủy");
         } else {
-            tracking.setStatus("Đang chờ");
+            tracking.setStatus("Chưa đến");
         }
         
         tracking.setUpdatedAt(LocalDateTime.now());

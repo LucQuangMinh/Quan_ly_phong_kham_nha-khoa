@@ -102,16 +102,14 @@ public class AppointmentTrackingService {
             existing.setStatus(newStatus);
             existing.setUpdatedAt(LocalDateTime.now());
             
-            // Sync with PatientAppointment (UC2.4)
+            // Sync with PatientAppointment
             if (existing.getAppointmentId() != null) {
                 appointmentRepo.findById(existing.getAppointmentId()).ifPresent(app -> {
                     if ("Đã khám".equals(newStatus)) {
                         app.setStatus("Khám xong");
-                    } else if ("Đang chờ".equals(newStatus)) {
-                        app.setStatus("Đã đặt");
-                    } else if ("Đang khám".equals(newStatus)) {
+                    } else if ("Đã đến".equals(newStatus) || "Đang khám".equals(newStatus)) {
                         app.setStatus("Đã xác nhận");
-                    } else if ("Đã hủy".equals(newStatus) || "Bác sĩ từ chối".equals(newStatus)) {
+                    } else if ("Bác sĩ từ chối".equals(newStatus)) {
                         app.setStatus("Hủy");
                     }
                     appointmentRepo.save(app);
@@ -143,11 +141,16 @@ public class AppointmentTrackingService {
     
     private List<String> getAllowedNextStates(String currentStatus) {
         switch (currentStatus) {
-            case "Đang chờ": return Arrays.asList("Đang chờ", "Đang khám", "Bác sĩ từ chối");
-            case "Đang khám": return Arrays.asList("Đang khám", "Đã khám", "Vắng");
+            // New flow: Chưa đến -> Đã đến (by check-in) or Vắng mặt (by scheduler)
+            case "Chưa đến": return Arrays.asList("Chưa đến", "Đã đến", "Vắng");
+            // Đã đến -> Bác sĩ khám xong
+            case "Đã đến": return Arrays.asList("Đã đến", "Đã khám");
             case "Đã khám": return Arrays.asList("Đã khám");
             case "Vắng": return Arrays.asList("Vắng");
-            default: return Arrays.asList(currentStatus); // Fallback
+            // Legacy statuses fallback
+            case "Đang chờ": return Arrays.asList("Đang chờ", "Đang khám", "Bác sĩ từ chối");
+            case "Đang khám": return Arrays.asList("Đang khám", "Đã khám", "Vắng");
+            default: return Arrays.asList(currentStatus);
         }
     }
 

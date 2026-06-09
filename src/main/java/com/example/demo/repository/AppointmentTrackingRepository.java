@@ -12,4 +12,7 @@ public interface AppointmentTrackingRepository extends JpaRepository<Appointment
     List<AppointmentTracking> findByRoomContainingOrderByExaminationDateAsc(String room);
     List<AppointmentTracking> findByPatientNameOrderByExaminationDateAsc(String patientName);
     java.util.Optional<AppointmentTracking> findByAppointmentId(Long appointmentId);
+    
+    // For scheduler: find all "Chưa đến" on today
+    List<AppointmentTracking> findByStatusAndExaminationDate(String status, java.time.LocalDate date);
 }

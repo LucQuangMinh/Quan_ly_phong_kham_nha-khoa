@@ -99,7 +99,11 @@
     </header>
 
     <nav class="nav" id="sidebarNav" aria-label="Menu chính">
-      <a href="appointments.html" class="nav-item" data-menu="appointments">
+            <a href="checkin.html" class="nav-item checkin-menu" data-menu="checkin">
+        <span class="icon" aria-hidden="true">📍</span>
+        <span class="menu-text">Tiếp đón (Check-in)</span>
+      </a>
+<a href="appointments.html" class="nav-item" data-menu="appointments">
         <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span>
         <span class="menu-text">Đăng ký khám</span>
       </a>
@@ -149,11 +153,10 @@
             </div>
             
             <div class="tabs" id="tabsContainer">
-                <button class="tab-btn active" onclick="switchTab('Đang chờ')">Chờ tiếp nhận</button>
-                <button class="tab-btn" onclick="switchTab('Đang khám')">Hàng đợi</button>
-                <button class="tab-btn" onclick="switchTab('Đã khám')">Đã khám</button>
-                <button class="tab-btn" onclick="switchTab('Đã hủy')">Đã hủy</button>
-                <button class="tab-btn" onclick="switchTab('Vắng')">Vắng</button>
+                <button class="tab-btn" onclick="switchTab('Đã đặt')" id="tabDaDat">Đã đặt lịch</button>
+                <button class="tab-btn active" onclick="switchTab('Hàng chờ')" id="tabHangDoi">Hàng chờ</button>
+                <button class="tab-btn" onclick="switchTab('Khám xong')" id="tabKhamXong">Khám xong</button>
+                <button class="tab-btn" onclick="switchTab('Đã hủy')" id="tabHuy">Đã hủy / Vắng</button>
             </div>
 
             <div class="table-container">
@@ -203,10 +206,9 @@
             <div class="form-group" id="statusGroup" style="display: none;">
                 <label>Trạng thái</label>
                 <select id="status" class="form-control">
-                    <option value="Đang chờ">Đang chờ</option>
-                    <option value="Đang khám">Đang khám</option>
+                    <option value="Chưa đến">Chưa đến</option>
+                    <option value="Đã đến">Đã đến</option>
                     <option value="Đã khám">Đã khám</option>
-                    <option value="Đã hủy">Đã hủy</option>
                     <option value="Vắng">Vắng</option>
                 </select>
             </div>
@@ -229,7 +231,7 @@
         
         let trackings = [];
         let doctors = [];
-        let currentTab = 'Đang chờ';
+        let currentTab = 'Hàng chờ';
         
         // Simulating login check
         async function checkLogin() {
@@ -286,15 +288,17 @@
                 }
                 document.getElementById('pageTitle').textContent = `Danh sách khám bệnh nhân (${displayName})`;
                 document.getElementById('thActions').style.display = 'table-cell';
-            } else if (currentRole === 'admin' || currentRole === 'le-tan') {
+            } else if (currentRole === 'admin' || currentRole === 'quan-ly-phong-kham' || currentRole === 'le-tan') {
                 document.getElementById('pageTitle').textContent = 'Theo dõi lịch khám';
-                document.getElementById('btnAdd').style.display = 'block';
+                if (currentRole === 'le-tan') {
+                    document.getElementById('btnAdd').style.display = 'block';
+                }
                 document.getElementById('thActions').style.display = 'table-cell';
             } else if (currentRole === 'benh-nhan') {
                 document.getElementById('pageTitle').textContent = 'Theo dõi lịch khám của tôi';
                 document.getElementById('thActions').style.display = 'table-cell';
                 document.querySelectorAll('.tab-btn').forEach(btn => {
-                    if (btn.textContent === 'Hàng đợi') {
+                    if (btn.textContent === 'Hàng chờ' || btn.textContent === 'Hàng đợi') {
                         btn.style.display = 'none';
                     }
                 });
@@ -359,8 +363,9 @@
             currentTab = status;
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.textContent.includes(status) || 
-                    (status === 'Đang khám' && btn.textContent === 'Hàng đợi') ||
-                    (status === 'Đang chờ' && btn.textContent === 'Chờ tiếp nhận'));
+                    (status === 'Hàng chờ' && btn.textContent === 'Hàng chờ') ||
+                    (status === 'Đã đặt' && btn.textContent === 'Đã đặt lịch') ||
+                    (status === 'Khám xong' && btn.textContent === 'Khám xong'));
             });
             renderTable();
         }
@@ -370,10 +375,14 @@
             tbody.innerHTML = '';
             
             const filtered = trackings.filter(t => {
+                const stat = t.status || '';
+                if (currentTab === 'Đã đặt') return stat === 'Chưa đến';
+                if (currentTab === 'Hàng chờ') return stat === 'Đã đến';
+                if (currentTab === 'Khám xong') return stat === 'Đã khám';
                 if (currentTab === 'Đã hủy') {
-                    return t.status.toLowerCase().includes('hủy') || t.status.toLowerCase().includes('từ chối');
+                    return stat.toLowerCase().includes('hủy') || stat.toLowerCase().includes('từ chối') || stat.toLowerCase().includes('vắng');
                 }
-                return t.status === currentTab;
+                return stat === currentTab;
             });
             
             if (filtered.length === 0) {
@@ -382,42 +391,37 @@
             }
             
             filtered.forEach(t => {
+                const stat = t.status || '';
                 let badgeClass = '';
-                if (t.status === 'Đang chờ') badgeClass = 'status-chờ';
-                else if (t.status === 'Đang khám') badgeClass = 'status-đang';
-                else if (t.status === 'Đã khám') badgeClass = 'status-đã';
-                else if (t.status.toLowerCase().includes('hủy') || t.status.toLowerCase().includes('từ chối')) badgeClass = 'status-hủy';
+                if (stat === 'Chưa đến' || stat === 'Đang chờ') badgeClass = 'status-chờ';
+                else if (stat === 'Đã đến' || stat === 'Đang khám') badgeClass = 'status-đang';
+                else if (stat === 'Đã khám') badgeClass = 'status-đã';
+                else if (stat.toLowerCase().includes('hủy') || stat.toLowerCase().includes('từ chối') || stat.toLowerCase().includes('vắng')) badgeClass = 'status-hủy';
                 else badgeClass = 'status-hủy';
                 
                 let actionsHtml = '';
-                if (currentRole === 'admin' || currentRole === 'le-tan') {
+                if (currentRole === 'le-tan') {
                     actionsHtml = `
                         <td style="white-space: nowrap;">
                             <a class="action-link" onclick="openEditModal(${t.id})">Sửa</a>
                             <a class="action-link action-delete" onclick="deleteTracking(${t.id})">Xóa</a>
                         </td>
                     `;
+                } else if (currentRole === 'admin' || currentRole === 'quan-ly-phong-kham') {
+                    actionsHtml = `<td></td>`;
                 } else if (currentRole === 'bac-si') {
                     // Doctor inline actions
-                    if (t.status === 'Đang chờ') {
-                        actionsHtml = `
-                            <td style="white-space: nowrap;">
-                                <a class="action-link" style="color: #10b981;" onclick="updateStatus(${t.id}, 'Đang khám', 'Tiếp nhận bệnh nhân ${t.patientName}?')">Tiếp nhận</a>
-                                <a class="action-link action-delete" onclick="updateStatus(${t.id}, 'Bác sĩ từ chối', 'Bạn muốn từ chối tiếp nhận bệnh nhân ${t.patientName}?')">Từ chối</a>
-                            </td>
-                        `;
-                    } else if (t.status === 'Đang khám') {
+                    if (t.status === 'Đã đến') {
                         actionsHtml = `
                             <td style="white-space: nowrap;">
                                 <a class="action-link" style="color: #3b82f6; font-weight: 600;" onclick="updateStatus(${t.id}, 'Đã khám', 'Xác nhận đã khám xong cho ${t.patientName}?')">Đã khám xong</a>
-                                <a class="action-link action-delete" onclick="updateStatus(${t.id}, 'Vắng', 'Bệnh nhân ${t.patientName} vắng mặt?')">Vắng mặt</a>
                             </td>
                         `;
                     } else {
                         actionsHtml = `<td></td>`;
                     }
                 } else if (currentRole === 'benh-nhan') {
-                    if (t.status === 'Đang chờ') {
+                    if (t.status === 'Chưa đến') {
                         actionsHtml = `
                             <td style="white-space: nowrap;">
                                 <a class="action-link action-delete" onclick="updateStatus(${t.id}, 'Bệnh nhân hủy', 'Bạn muốn hủy lịch khám của bệnh nhân ${t.patientName}?')">Hủy lịch</a>
@@ -437,9 +441,9 @@
                         <td>${t.patientName}</td>
                         <td>${t.examinationDate}</td>
                         <td>${t.room || 'Chưa xếp phòng'}</td>
-                    <td><span class="status-badge ${badgeClass}">${t.status}</span></td>
+                    <td><span class="status-badge ${badgeClass}">${stat}</span></td>
                     <td>${timeStr}</td>
-                    ${(currentRole === 'admin' || currentRole === 'le-tan' || currentRole === 'benh-nhan' || currentRole === 'bac-si') ? actionsHtml : ''}
+                    ${(currentRole === 'admin' || currentRole === 'quan-ly-phong-kham' || currentRole === 'le-tan' || currentRole === 'benh-nhan' || currentRole === 'bac-si') ? actionsHtml : ''}
                 </tr>
             `;
             tbody.insertAdjacentHTML('beforeend', row);
@@ -627,9 +631,9 @@
         };
 
         const allowedMenus = {
-            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts'],
-            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts'],
-            'le-tan': ['appointments', 'schedules'],
+            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking'],
+            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking'],
+            'le-tan': ['appointments', 'schedules', 'checkin'],
             'bac-si': ['schedules', 'tracking'],
             'benh-nhan': ['appointments']
         };
