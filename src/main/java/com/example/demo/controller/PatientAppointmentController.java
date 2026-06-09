@@ -36,6 +36,13 @@ public class PatientAppointmentController {
         return ResponseEntity.ok(appointmentService.getAppointments(role, patientName));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getAppointment(@PathVariable Long id) {
+        return appointmentRepo.findById(id)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping
     public ResponseEntity<?> createAppointment(
             @RequestHeader(value = "X-User-Role", defaultValue = "") String headerRole,

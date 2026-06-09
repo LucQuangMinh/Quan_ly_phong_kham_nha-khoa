@@ -306,6 +306,9 @@
             if (currentRole !== 'benh-nhan') {
                 loadDoctors();
             }
+            if (currentRole === 'bac-si') {
+                loadServices();
+            }
             loadData();
         }
         
@@ -414,7 +417,7 @@
                     if (t.status === 'Đã đến') {
                         actionsHtml = `
                             <td style="white-space: nowrap;">
-                                <a class="action-link" style="color: #3b82f6; font-weight: 600;" onclick="updateStatus(${t.id}, 'Đã khám', 'Xác nhận đã khám xong cho ${t.patientName}?')">Đã khám xong</a>
+                                <a class="action-link" style="color: #3b82f6; font-weight: 600;" onclick="openExamModal(${t.id}, ${t.appointmentId})">🩺 Khám bệnh</a>
                             </td>
                         `;
                     } else {
@@ -425,6 +428,12 @@
                         actionsHtml = `
                             <td style="white-space: nowrap;">
                                 <a class="action-link action-delete" onclick="updateStatus(${t.id}, 'Bệnh nhân hủy', 'Bạn muốn hủy lịch khám của bệnh nhân ${t.patientName}?')">Hủy lịch</a>
+                            </td>
+                        `;
+                    } else if (t.status === 'Đã khám') {
+                        actionsHtml = `
+                            <td style="white-space: nowrap;">
+                                <a class="action-link" style="color: #10b981; font-weight: 600;" onclick="openPatientRecordModal(${t.appointmentId})">📄 Xem hồ sơ</a>
                             </td>
                         `;
                     } else {
@@ -474,6 +483,154 @@
             }
         }
         
+        
+        let allServices = [];
+        async function loadServices() {
+            try {
+                const res = await fetch('/api/services', {
+                    headers: {
+                        'X-Role': encodeURIComponent(currentUser.role || ''),
+                        'X-User-Role': encodeURIComponent(currentUser.role || ''),
+                        'X-User-Name': encodeURIComponent(currentUser.fullname || ''),
+                        'X-User-Id': currentUser.id || ''
+                    }
+                });
+                if (res.ok) {
+                    allServices = await res.json();
+                    const sel = document.getElementById('examServiceId');
+                    allServices.filter(s => s.status === 'Áp dụng').forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = `${s.name} (${(s.price || 0).toLocaleString('vi-VN')}đ)`;
+                        sel.appendChild(opt);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function openExamModal(trackingId, appointmentId) {
+            const t = trackings.find(x => x.id === trackingId);
+            if (!t) return;
+            
+            document.getElementById('examTrackingId').value = trackingId;
+            document.getElementById('examAppointmentId').value = appointmentId || '';
+            document.getElementById('examPatientName').value = t.patientName;
+            document.getElementById('examNote').value = t.note || '';
+            document.getElementById('examServiceId').value = '';
+            
+            if (appointmentId) {
+                try {
+                    const res = await fetch(`/api/patient-appointments/${appointmentId}`);
+                    if (res.ok) {
+                        const app = await res.json();
+                        if (app.serviceId) {
+                            document.getElementById('examServiceId').value = app.serviceId;
+                        }
+                        if (app.serviceName) {
+                            document.getElementById('originalServiceContainer').style.display = 'block';
+                            document.getElementById('originalServiceName').textContent = app.serviceName + (app.quotedPrice ? ` (${app.quotedPrice.toLocaleString('vi-VN')}đ)` : '');
+                        } else {
+                            document.getElementById('originalServiceContainer').style.display = 'none';
+                        }
+                        if (app.note) {
+                            document.getElementById('examNote').value = app.note;
+                        }
+                    }
+                } catch(e) { console.error(e); }
+            } else {
+                document.getElementById('originalServiceContainer').style.display = 'none';
+            }
+            document.getElementById('examModal').style.display = 'flex';
+        }
+
+        
+        async function openPatientRecordModal(appointmentId) {
+            if (!appointmentId) return;
+            try {
+                const res = await fetch(`/api/patient-appointments/${appointmentId}`);
+                if (res.ok) {
+                    const app = await res.json();
+                    document.getElementById('prPatientName').value = app.patientName;
+                    document.getElementById('prServiceName').value = app.serviceName || 'Chưa cập nhật';
+                    document.getElementById('prPrice').value = app.quotedPrice ? app.quotedPrice.toLocaleString('vi-VN') + ' đ' : '0 đ';
+                    document.getElementById('prNote').value = app.note || 'Không có ghi chú';
+                    
+                    document.getElementById('patientRecordModal').style.display = 'flex';
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function closePatientRecordModal() {
+            document.getElementById('patientRecordModal').style.display = 'none';
+        }
+
+        function closeExamModal() {
+            document.getElementById('examModal').style.display = 'none';
+        }
+
+        async function saveExam() {
+            const trackingId = document.getElementById('examTrackingId').value;
+            const appointmentId = document.getElementById('examAppointmentId').value;
+            const serviceId = document.getElementById('examServiceId').value;
+            const note = document.getElementById('examNote').value;
+            
+            if (!serviceId) {
+                alert("Vui lòng chỉ định dịch vụ thực hiện để tính phí!");
+                return;
+            }
+            
+            let serviceName = '';
+            let quotedPrice = 0;
+            const selectedSrv = allServices.find(s => s.id == serviceId);
+            if (selectedSrv) {
+                serviceName = selectedSrv.name;
+                quotedPrice = selectedSrv.price;
+            }
+            
+            try {
+                if (appointmentId) {
+                    const resGet = await fetch(`/api/patient-appointments/${appointmentId}`);
+                    if (resGet.ok) {
+                        let appData = await resGet.json();
+                        appData.serviceId = serviceId;
+                        appData.serviceName = serviceName;
+                        appData.quotedPrice = quotedPrice;
+                        appData.note = note;
+                        
+                        await fetch(`/api/patient-appointments/${appointmentId}`, {
+                            method: 'PUT',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'X-User-Role': encodeURIComponent(currentUser.role || ''),
+                                'X-User-Name': encodeURIComponent(currentUser.fullname || '')
+                            },
+                            body: JSON.stringify(appData)
+                        });
+                    }
+                }
+                
+                const resStatus = await fetch(`/api/trackings/${trackingId}/status`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-User-Role': encodeURIComponent(currentUser.role || ''),
+                        'X-User-Name': encodeURIComponent(currentUser.fullname || '')
+                    },
+                    body: JSON.stringify({ status: 'Đã khám', note: note })
+                });
+                
+                if (resStatus.ok) {
+                    closeExamModal();
+                    loadData();
+                } else {
+                    alert('Lỗi cập nhật trạng thái');
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Lỗi kết nối server");
+            }
+        }
+
         // Form & Modal logic
         function openAddModal() {
             document.getElementById('modalTitle').textContent = 'Thêm bản ghi theo dõi';
@@ -664,6 +821,76 @@
 
 </script>
 <script>document.addEventListener('DOMContentLoaded', setupDynamicUI);</script>
+
+    <!-- Medical Examination Modal -->
+    <div id="examModal" class="modal-backdrop">
+        <div class="modal">
+            <h2 id="examModalTitle" style="color: #0f172a; margin-bottom: 20px;">🩺 Khám bệnh</h2>
+            <input type="hidden" id="examTrackingId">
+            <input type="hidden" id="examAppointmentId">
+            
+            <div class="form-group">
+                <label>Bệnh nhân</label>
+                <input type="text" id="examPatientName" class="form-control" disabled style="background-color: #f8fafc; font-weight: 600;">
+            </div>
+            
+            <div class="form-group" id="originalServiceContainer" style="display: none; background-color: #eff6ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-bottom: 16px;">
+                <span style="font-size: 13px; color: #1e3a8a; font-weight: 600;">💡 Dịch vụ bệnh nhân đăng ký ban đầu:</span>
+                <div id="originalServiceName" style="font-size: 15px; color: #1e40af; font-weight: 700; margin-top: 4px;"></div>
+            </div>
+            
+            <div class="form-group">
+                <label>Chỉ định dịch vụ / Cập nhật dịch vụ</label>
+                <select id="examServiceId" class="form-control">
+                    <option value="">-- Chọn dịch vụ --</option>
+                </select>
+                <div style="font-size: 13px; color: #64748b; margin-top: 5px;">* Dịch vụ chốt ở đây sẽ được dùng để tính hóa đơn.</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Chẩn đoán & Lời dặn (Ghi chú)</label>
+                <textarea id="examNote" class="form-control" rows="5" placeholder="Nhập tình trạng răng miệng, hướng điều trị và lời dặn dò cho bệnh nhân..."></textarea>
+            </div>
+            
+            <div class="modal-actions" style="margin-top: 24px;">
+                <button class="btn" style="background: #e2e8f0; color: #475569;" onclick="closeExamModal()">Hủy</button>
+                <button class="btn btn-primary" onclick="saveExam()">Hoàn tất khám</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Patient Record Read-Only Modal -->
+    <div id="patientRecordModal" class="modal-backdrop">
+        <div class="modal">
+            <h2 style="color: #10b981; margin-bottom: 20px;">📄 Hồ sơ khám bệnh</h2>
+            
+            <div class="form-group">
+                <label>Họ tên</label>
+                <input type="text" id="prPatientName" class="form-control" disabled style="background-color: #f8fafc; font-weight: 600;">
+            </div>
+            
+            <div class="form-group">
+                <label>Dịch vụ thực hiện</label>
+                <input type="text" id="prServiceName" class="form-control" disabled style="background-color: #f8fafc;">
+            </div>
+            
+            <div class="form-group">
+                <label>Chi phí dự kiến</label>
+                <input type="text" id="prPrice" class="form-control" disabled style="background-color: #f8fafc; color: #ef4444; font-weight: 600;">
+            </div>
+            
+            <div class="form-group">
+                <label>Chẩn đoán & Lời dặn của bác sĩ</label>
+                <textarea id="prNote" class="form-control" rows="5" disabled style="background-color: #fefce8; color: #475569;"></textarea>
+            </div>
+            
+            <div class="modal-actions" style="margin-top: 24px;">
+                <button class="btn btn-primary" onclick="closePatientRecordModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
 

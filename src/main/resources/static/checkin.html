@@ -232,7 +232,7 @@
                 } else if (displayStatus === 'Đã đến') {
                     actions = `<span style="color: #64748b; font-style: italic; font-size: 0.8rem;">Đang chờ bác sĩ...</span>`;
                 } else if (displayStatus === 'Khám xong') {
-                    actions = `<a class="action-link action-pay" onclick="markPaid(${item.id})">💳 Xác nhận thanh toán</a>`;
+                    actions = `<a class="action-link action-pay" onclick="openPaymentModal(${item.id})">💳 Thanh toán</a>`;
                 }
 
                 tbody.innerHTML += `
@@ -266,21 +266,52 @@
             } catch (e) { alert('Lỗi kết nối'); }
         }
 
-        async function markPaid(id) {
-            if (!confirm('Xác nhận bệnh nhân đã thanh toán chi phí?')) return;
+
+        async function openPaymentModal(id) {
+            document.getElementById('payAppointmentId').value = id;
+            try {
+                const res = await fetch(`/api/patient-appointments/${id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const price = data.quotedPrice || 0;
+                    document.getElementById('payAmountDue').value = price.toLocaleString('vi-VN') + ' đ';
+                    document.getElementById('payAmountGiven').value = price; // Mặc định tự điền số tiền khách đưa
+                } else {
+                    document.getElementById('payAmountDue').value = '0 đ';
+                    document.getElementById('payAmountGiven').value = 0;
+                }
+            } catch (e) { console.error(e); }
+            
+            document.getElementById('paymentModal').style.display = 'flex';
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+        }
+
+        async function submitPayment() {
+            const id = document.getElementById('payAppointmentId').value;
+            const given = document.getElementById('payAmountGiven').value;
+            if (!given || given < 0) {
+                alert("Vui lòng nhập số tiền hợp lệ!");
+                return;
+            }
             try {
                 const res = await fetch(`/api/checkin/${id}/paid`, {
                     method: 'PUT',
                     headers: { 'X-User-Role': encodeURIComponent(currentUser.role || '') }
                 });
                 if (res.ok) {
-                    searchPatients();
+                    closePaymentModal();
+                    searchPatients(); // Cập nhật lại UI
+                    alert("Thanh toán thành công!");
                 } else {
                     const err = await res.json();
-                    alert(err.message || 'Lỗi');
+                    alert(err.message || 'Lỗi thanh toán');
                 }
             } catch (e) { alert('Lỗi kết nối'); }
         }
+
 
         function logout(e) {
             e.preventDefault();
@@ -335,5 +366,29 @@ function setupDynamicUI() {
         });
     }
 </script>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000;">
+        <div class="modal" style="background: white; padding: 24px; border-radius: 12px; width: 400px; max-width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+            <h2 style="margin-top: 0; color: #1e293b;">Thanh toán viện phí</h2>
+            <input type="hidden" id="payAppointmentId">
+            
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label>Số tiền cần thanh toán</label>
+                <input type="text" id="payAmountDue" class="form-control" disabled style="background-color: #f8fafc; font-weight: 700; color: #dc2626; font-size: 1.1rem;">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label>Số tiền khách đưa (Tiền mặt)</label>
+                <input type="number" id="payAmountGiven" class="form-control" placeholder="Nhập số tiền khách đưa...">
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="btn" style="background: #e2e8f0; color: #475569;" onclick="closePaymentModal()">Hủy</button>
+                <button class="btn btn-primary" onclick="submitPayment()">Xác nhận thanh toán</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

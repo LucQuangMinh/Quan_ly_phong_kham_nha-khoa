@@ -36,7 +36,7 @@ public class CheckInController {
             @RequestParam(required = false) String phone,
             @RequestParam(required = false) String name) {
 
-        List<String> activeStatuses = Arrays.asList("Đã đặt", "Đã xác nhận");
+        List<String> activeStatuses = Arrays.asList("Đã đặt", "Đã xác nhận", "Khám xong");
         LocalDate today = LocalDate.now();
 
         List<PatientAppointment> results;
