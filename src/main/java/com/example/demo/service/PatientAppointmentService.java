@@ -40,7 +40,8 @@ public class PatientAppointmentService {
             appointment.setStatus("Đã đặt");
         }
         
-        // Clash Validation
+        // Clash Validation removed: Allow unlimited patients per shift
+        /*
         if (Arrays.asList("Đã đặt", "Đã xác nhận").contains(appointment.getStatus()) && appointment.getDoctorId() != null) {
             boolean clash = appointmentRepo.existsByDoctorIdAndExaminationDateAndShiftTypeAndStatusIn(
                 appointment.getDoctorId(), 
@@ -52,6 +53,7 @@ public class PatientAppointmentService {
                 throw new RuntimeException("Bác sĩ đã có lượt khám trùng ca trong ngày (lượt còn hiệu lực).");
             }
         }
+        */
 
         appointment.setCreatedAt(LocalDateTime.now());
         appointment.setCode("PA-" + System.currentTimeMillis() % 100000);
@@ -113,7 +115,8 @@ public class PatientAppointmentService {
             throw new RuntimeException("Chuyển trạng thái không hợp lệ...");
         }
         
-        // Clash validation if changing to active status or changing time/doctor
+        // Clash validation removed: Allow unlimited patients per shift
+        /*
         if (Arrays.asList("Đã đặt", "Đã xác nhận").contains(newStatus) && newData.getDoctorId() != null) {
             boolean timeOrDoctorChanged = !newData.getDoctorId().equals(existing.getDoctorId()) ||
                                           !newData.getExaminationDate().equals(existing.getExaminationDate()) ||
@@ -130,6 +133,7 @@ public class PatientAppointmentService {
                 }
             }
         }
+        */
         
         existing.setDoctorId(newData.getDoctorId());
         existing.setRoom(newData.getRoom());
@@ -150,7 +154,7 @@ public class PatientAppointmentService {
                 }
             }
             if ("Hủy".equals(saved.getStatus())) {
-                tracking.setStatus("Đã hủy");
+                tracking.setStatus("Lễ tân hủy");
             }
             tracking.setUpdatedAt(LocalDateTime.now());
             trackingRepo.save(tracking);
@@ -168,11 +172,15 @@ public class PatientAppointmentService {
             throw new RuntimeException("Không xóa lượt đã xác nhận — dùng trạng thái Hủy theo quy trình.");
         }
         
-        // Physical delete cascade to appointment_trackings
+        // Logical delete for appointment_trackings
         trackingRepo.findByAppointmentId(id).ifPresent(tracking -> {
-            trackingRepo.delete(tracking);
+            tracking.setStatus("Bệnh nhân hủy");
+            tracking.setUpdatedAt(LocalDateTime.now());
+            trackingRepo.save(tracking);
         });
         
-        appointmentRepo.delete(existing);
+        // Logical delete for PatientAppointment
+        existing.setStatus("Hủy");
+        appointmentRepo.save(existing);
     }
 }

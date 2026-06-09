@@ -399,6 +399,8 @@
                     <a class="action-link" onclick="openEditModal(${a.id})">Sửa</a>
                     <a class="action-link action-delete" onclick="cancelAppointment(${a.id})">Hủy lịch</a>
                 `;
+            } else if (a.status === 'Đã xác nhận') {
+                actionHtml = `<span style="color:#64748b; font-size:0.85rem; font-style:italic;">Chờ đến ngày khám</span>`;
             }
             
             tbody.innerHTML += `
@@ -710,7 +712,10 @@
         try {
             const res = await fetch(url, {
                 method: method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-User-Role': encodeURIComponent(currentUser.role || '')
+                },
                 body: JSON.stringify(data)
             });
             if (res.ok) {
@@ -729,7 +734,12 @@
     async function cancelAppointment(id) {
         if (!confirm('Bạn có chắc muốn hủy lịch khám này không? Thao tác này không thể hoàn tác!')) return;
         try {
-            const res = await fetch(`/api/patient-appointments/${id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/patient-appointments/${id}`, { 
+                method: 'DELETE',
+                headers: {
+                    'X-User-Role': encodeURIComponent(currentUser.role || '')
+                }
+            });
             if (res.ok) {
                 loadData();
                 alert('Đã hủy lịch thành công!');

@@ -14,6 +14,9 @@ public class PatientAppointmentController {
 
     @Autowired
     private PatientAppointmentService appointmentService;
+    
+    @Autowired
+    private com.example.demo.repository.PatientAppointmentRepository appointmentRepo;
 
     @GetMapping
     public ResponseEntity<?> getAllAppointments(
@@ -54,7 +57,22 @@ public class PatientAppointmentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateAppointment(@PathVariable Long id, @RequestBody PatientAppointment appointment) {
+    public ResponseEntity<?> updateAppointment(
+            @PathVariable Long id, 
+            @RequestHeader(value = "X-User-Role", defaultValue = "") String headerRole,
+            @RequestBody PatientAppointment appointment) {
+        
+        try {
+            headerRole = java.net.URLDecoder.decode(headerRole, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {}
+        
+        if ("Bệnh nhân".equalsIgnoreCase(headerRole) || "benh-nhan".equalsIgnoreCase(headerRole)) {
+            PatientAppointment existing = appointmentRepo.findById(id).orElse(null);
+            if (existing != null && "Đã xác nhận".equals(existing.getStatus())) {
+                return ResponseEntity.status(403).body(Map.of("message", "Bác sĩ đã chấp nhận lịch hẹn, bạn không thể sửa nữa."));
+            }
+        }
+            
         try {
             return ResponseEntity.ok(appointmentService.updateAppointment(id, appointment));
         } catch (RuntimeException e) {
@@ -63,7 +81,21 @@ public class PatientAppointmentController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAppointment(@PathVariable Long id) {
+    public ResponseEntity<?> deleteAppointment(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Role", defaultValue = "") String headerRole) {
+            
+        try {
+            headerRole = java.net.URLDecoder.decode(headerRole, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {}
+        
+        if ("Bệnh nhân".equalsIgnoreCase(headerRole) || "benh-nhan".equalsIgnoreCase(headerRole)) {
+            PatientAppointment existing = appointmentRepo.findById(id).orElse(null);
+            if (existing != null && "Đã xác nhận".equals(existing.getStatus())) {
+                return ResponseEntity.status(403).body(Map.of("message", "Bác sĩ đã chấp nhận lịch hẹn, bạn không thể hủy nữa."));
+            }
+        }
+            
         try {
             appointmentService.deleteAppointment(id);
             return ResponseEntity.ok(Map.of("success", true, "message", "Đã hủy lịch khám"));

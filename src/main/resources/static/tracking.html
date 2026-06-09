@@ -280,7 +280,11 @@
         
         function initUI() {
             if (currentRole === 'bac-si') {
-                document.getElementById('pageTitle').textContent = `Danh sách khám bệnh nhân (BS. ${currentUser.fullname})`;
+                let displayName = currentUser.fullname;
+                if (!displayName.toLowerCase().startsWith("bs.") && !displayName.toLowerCase().startsWith("bác sĩ")) {
+                    displayName = "BS. " + displayName;
+                }
+                document.getElementById('pageTitle').textContent = `Danh sách khám bệnh nhân (${displayName})`;
                 document.getElementById('thActions').style.display = 'table-cell';
             } else if (currentRole === 'admin' || currentRole === 'le-tan') {
                 document.getElementById('pageTitle').textContent = 'Theo dõi lịch khám';
@@ -306,8 +310,8 @@
                 const res = await fetch('/api/doctors', {
                     headers: {
                         'X-Role': encodeURIComponent(currentUser.role || ''),
-                        'X-User-Role': currentUser.role || '',
-                        'X-User-Name': currentUser.fullname || '',
+                        'X-User-Role': encodeURIComponent(currentUser.role || ''),
+                        'X-User-Name': encodeURIComponent(currentUser.fullname || ''),
                         'X-User-Id': currentUser.id || ''
                     }
                 });
@@ -333,20 +337,22 @@
                 }
                 const res = await fetch(url, {
                     headers: {
-                        'X-User-Role': currentUser.role || '',
-                        'X-User-Name': currentUser.fullname || '',
+                        'X-User-Role': encodeURIComponent(currentUser.role || ''),
+                        'X-User-Name': encodeURIComponent(currentUser.fullname || ''),
                         'X-User-Id': currentUser.id || ''
                     }
                 });
                 if (res.ok) {
                     trackings = await res.json();
-                    console.log('Loaded trackings:', trackings);
-                    if (currentRole === 'bac-si') {
-                        alert('Debug - Số lượng lịch tracking lấy được: ' + trackings.length);
-                    }
+                    // document.getElementById('pageTitle').textContent += ` (Đã tải ${trackings.length} lịch)`;
                     renderTable();
+                } else {
+                    document.getElementById('tableBody').innerHTML = `<tr><td colspan="7">Lỗi API: ${res.status}</td></tr>`;
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="7">Lỗi JS: ${e.message}</td></tr>`;
+                console.error(e); 
+            }
         }
         
         function switchTab(status) {
@@ -363,7 +369,12 @@
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
             
-            const filtered = trackings.filter(t => t.status === currentTab);
+            const filtered = trackings.filter(t => {
+                if (currentTab === 'Đã hủy') {
+                    return t.status.toLowerCase().includes('hủy') || t.status.toLowerCase().includes('từ chối');
+                }
+                return t.status === currentTab;
+            });
             
             if (filtered.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; font-style:italic;">Không có bản ghi nào</td></tr>`;
@@ -373,8 +384,9 @@
             filtered.forEach(t => {
                 let badgeClass = '';
                 if (t.status === 'Đang chờ') badgeClass = 'status-chờ';
-                else if (t.status === 'Đang khám') badgeClass = 'status-đang'; // Reuse 'đang' color
+                else if (t.status === 'Đang khám') badgeClass = 'status-đang';
                 else if (t.status === 'Đã khám') badgeClass = 'status-đã';
+                else if (t.status.toLowerCase().includes('hủy') || t.status.toLowerCase().includes('từ chối')) badgeClass = 'status-hủy';
                 else badgeClass = 'status-hủy';
                 
                 let actionsHtml = '';
@@ -391,13 +403,14 @@
                         actionsHtml = `
                             <td style="white-space: nowrap;">
                                 <a class="action-link" style="color: #10b981;" onclick="updateStatus(${t.id}, 'Đang khám', 'Tiếp nhận bệnh nhân ${t.patientName}?')">Tiếp nhận</a>
-                                <a class="action-link action-delete" onclick="updateStatus(${t.id}, 'Vắng', 'Bệnh nhân ${t.patientName} vắng mặt?')">Vắng mặt</a>
+                                <a class="action-link action-delete" onclick="updateStatus(${t.id}, 'Bác sĩ từ chối', 'Bạn muốn từ chối tiếp nhận bệnh nhân ${t.patientName}?')">Từ chối</a>
                             </td>
                         `;
                     } else if (t.status === 'Đang khám') {
                         actionsHtml = `
                             <td style="white-space: nowrap;">
                                 <a class="action-link" style="color: #3b82f6; font-weight: 600;" onclick="updateStatus(${t.id}, 'Đã khám', 'Xác nhận đã khám xong cho ${t.patientName}?')">Đã khám xong</a>
+                                <a class="action-link action-delete" onclick="updateStatus(${t.id}, 'Vắng', 'Bệnh nhân ${t.patientName} vắng mặt?')">Vắng mặt</a>
                             </td>
                         `;
                     } else {
@@ -407,7 +420,7 @@
                     if (t.status === 'Đang chờ') {
                         actionsHtml = `
                             <td style="white-space: nowrap;">
-                                <a class="action-link action-delete" onclick="updateStatus(${t.id}, 'Đã hủy', 'Bạn muốn hủy lịch khám của bệnh nhân ${t.patientName}?')">Hủy lịch</a>
+                                <a class="action-link action-delete" onclick="updateStatus(${t.id}, 'Bệnh nhân hủy', 'Bạn muốn hủy lịch khám của bệnh nhân ${t.patientName}?')">Hủy lịch</a>
                             </td>
                         `;
                     } else {
@@ -426,7 +439,7 @@
                         <td>${t.room || 'Chưa xếp phòng'}</td>
                     <td><span class="status-badge ${badgeClass}">${t.status}</span></td>
                     <td>${timeStr}</td>
-                    ${(currentRole === 'admin' || currentRole === 'le-tan' || currentRole === 'benh-nhan' || currentRole === 'bac-si') ? `<td>${actionsHtml}</td>` : ''}
+                    ${(currentRole === 'admin' || currentRole === 'le-tan' || currentRole === 'benh-nhan' || currentRole === 'bac-si') ? actionsHtml : ''}
                 </tr>
             `;
             tbody.insertAdjacentHTML('beforeend', row);
@@ -440,8 +453,8 @@
                     method: 'PUT',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'X-User-Role': currentUser.role || '',
-                        'X-User-Name': currentUser.fullname || ''
+                        'X-User-Role': encodeURIComponent(currentUser.role || ''),
+                        'X-User-Name': encodeURIComponent(currentUser.fullname || '')
                     },
                     body: JSON.stringify({ status: newStatus })
                 });
@@ -544,8 +557,8 @@
                     method: method,
                     headers: { 
                         'Content-Type': 'application/json',
-                        'X-User-Role': currentUser.role || '',
-                        'X-User-Name': currentUser.fullname || ''
+                        'X-User-Role': encodeURIComponent(currentUser.role || ''),
+                        'X-User-Name': encodeURIComponent(currentUser.fullname || '')
                     },
                     body: JSON.stringify(payload)
                 });
@@ -570,8 +583,8 @@
                 const res = await fetch(`/api/trackings/${id}`, { 
                     method: 'DELETE',
                     headers: {
-                        'X-User-Role': currentUser.role || '',
-                        'X-User-Name': currentUser.fullname || ''
+                        'X-User-Role': encodeURIComponent(currentUser.role || ''),
+                        'X-User-Name': encodeURIComponent(currentUser.fullname || '')
                     }
                 });
                 if (res.ok) {

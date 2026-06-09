@@ -33,22 +33,28 @@ public class AppointmentTrackingService {
         boolean isAdminOrLeTan = "Admin".equalsIgnoreCase(role) || "Lễ tân".equalsIgnoreCase(role) || "le-tan".equalsIgnoreCase(role);
 
         if (isBacSi) {
+            Doctor targetDoc = null;
             if (userId != null) {
-                Optional<Doctor> docOpt = doctorRepo.findByUserId(userId);
-                if (docOpt.isPresent() && docOpt.get().getRoom() != null && !docOpt.get().getRoom().isEmpty()) {
-                    return trackingRepo.findByRoomContainingOrderByExaminationDateAsc(docOpt.get().getRoom());
-                }
-            } else {
-                // Fallback for older sessions without userId in localStorage
+                targetDoc = doctorRepo.findByUserId(userId).orElse(null);
+            }
+            
+            // Fallback for missing userId linkage or older sessions
+            if (targetDoc == null) {
                 List<Doctor> allDocs = doctorRepo.findAll();
                 for (Doctor d : allDocs) {
-                    if (d.getFullname() != null && d.getFullname().equalsIgnoreCase(filterName)) {
-                        if (d.getRoom() != null && !d.getRoom().isEmpty()) {
-                            return trackingRepo.findByRoomContainingOrderByExaminationDateAsc(d.getRoom());
+                    if (d.getFullname() != null && filterName != null) {
+                        String dName = d.getFullname().toLowerCase().replace("bs. ", "").replace("bác sĩ ", "").trim();
+                        String fName = filterName.toLowerCase().replace("bs. ", "").replace("bác sĩ ", "").trim();
+                        if (dName.equals(fName) || dName.contains(fName) || fName.contains(dName)) {
+                            targetDoc = d;
+                            break;
                         }
-                        break;
                     }
                 }
+            }
+            
+            if (targetDoc != null && targetDoc.getRoom() != null && !targetDoc.getRoom().isEmpty()) {
+                return trackingRepo.findByRoomContainingOrderByExaminationDateAsc(targetDoc.getRoom());
             }
             return new java.util.ArrayList<>();
         }
@@ -103,9 +109,9 @@ public class AppointmentTrackingService {
                         app.setStatus("Khám xong");
                     } else if ("Đang chờ".equals(newStatus)) {
                         app.setStatus("Đã đặt");
-                    } else if ("Đã tiếp nhận".equals(newStatus)) {
+                    } else if ("Đang khám".equals(newStatus)) {
                         app.setStatus("Đã xác nhận");
-                    } else if ("Đã hủy".equals(newStatus)) {
+                    } else if ("Đã hủy".equals(newStatus) || "Bác sĩ từ chối".equals(newStatus)) {
                         app.setStatus("Hủy");
                     }
                     appointmentRepo.save(app);
@@ -137,7 +143,7 @@ public class AppointmentTrackingService {
     
     private List<String> getAllowedNextStates(String currentStatus) {
         switch (currentStatus) {
-            case "Đang chờ": return Arrays.asList("Đang chờ", "Đang khám", "Vắng");
+            case "Đang chờ": return Arrays.asList("Đang chờ", "Đang khám", "Bác sĩ từ chối");
             case "Đang khám": return Arrays.asList("Đang khám", "Đã khám", "Vắng");
             case "Đã khám": return Arrays.asList("Đã khám");
             case "Vắng": return Arrays.asList("Vắng");

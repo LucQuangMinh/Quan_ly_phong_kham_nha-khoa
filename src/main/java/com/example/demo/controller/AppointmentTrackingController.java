@@ -23,6 +23,11 @@ public class AppointmentTrackingController {
             @RequestParam(value = "role", required = false) String queryRole,
             @RequestParam(required = false) String doctorName) {
         
+        try {
+            headerRole = java.net.URLDecoder.decode(headerRole, java.nio.charset.StandardCharsets.UTF_8);
+            username = java.net.URLDecoder.decode(username, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {}
+        
         // Tomcat can mangle UTF-8 headers. Prefer queryRole if present (which is ASCII like "bac-si").
         String role = (queryRole != null && !queryRole.trim().isEmpty()) ? queryRole : headerRole;
         boolean isBenhNhan = "Bệnh nhân".equalsIgnoreCase(role) || "benh-nhan".equalsIgnoreCase(role);
@@ -45,6 +50,10 @@ public class AppointmentTrackingController {
             @RequestBody AppointmentTracking tracking, 
             @RequestParam(required = false) Long doctorId) {
             
+        try {
+            role = java.net.URLDecoder.decode(role, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {}
+        
         // Backend API Protection
         if ("Bệnh nhân".equalsIgnoreCase(role)) {
             return ResponseEntity.status(403).body(Map.of("message", "Forbidden: Bệnh nhân không có quyền Thêm bản ghi."));
@@ -63,6 +72,10 @@ public class AppointmentTrackingController {
             @PathVariable Long id, 
             @RequestBody AppointmentTracking tracking) {
             
+        try {
+            role = java.net.URLDecoder.decode(role, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {}
+
         // Backend API Protection
         if ("Bệnh nhân".equalsIgnoreCase(role)) {
             return ResponseEntity.status(403).body(Map.of("message", "Forbidden: Bệnh nhân không có quyền Sửa toàn bộ bản ghi."));
@@ -87,9 +100,13 @@ public class AppointmentTrackingController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTracking(
-            @RequestHeader(value = "X-User-Role", defaultValue = "") String role,
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Role", defaultValue = "") String role) {
             
+        try {
+            role = java.net.URLDecoder.decode(role, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {}
+        
         // Backend API Protection
         if ("Bệnh nhân".equalsIgnoreCase(role)) {
             return ResponseEntity.status(403).body(Map.of("message", "Forbidden: Bệnh nhân không có quyền Xóa bản ghi."));
