@@ -77,8 +77,11 @@ public class AppointmentTrackingService {
         
         if (doctorId != null) {
             Optional<Doctor> doc = doctorRepo.findById(doctorId);
-            if (doc.isPresent() && doc.get().getRoom() != null) {
-                tracking.setRoom(doc.get().getRoom());
+            if (doc.isPresent()) {
+                if (doc.get().getRoom() != null) {
+                    tracking.setRoom(doc.get().getRoom());
+                }
+                tracking.setDoctorName(doc.get().getFullname());
             }
         }
         

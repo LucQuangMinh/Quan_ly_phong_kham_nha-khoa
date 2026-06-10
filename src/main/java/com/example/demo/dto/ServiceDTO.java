@@ -12,4 +12,5 @@ public class ServiceDTO {
     private String description;
     private String status;
     private Double price;
+    private Double bonusCoefficient;
 }

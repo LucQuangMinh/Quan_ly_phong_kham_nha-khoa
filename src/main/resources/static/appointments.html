@@ -140,7 +140,11 @@
         <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
         <span class="menu-text">Thiết lập ca làm việc</span>
       </a>
-      <div style="margin-top: 30px; border-top: 1px solid var(--sidebar-border); padding-top: 10px;"></div>
+            <a href="revenue.html" class="nav-item" data-menu="finance-group">
+        <span class="icon" aria-hidden="true">💰</span>
+        <span class="menu-text">Tài chính & Lương</span>
+      </a>
+<div style="margin-top: 30px; border-top: 1px solid var(--sidebar-border); padding-top: 10px;"></div>
       <a href="#" class="nav-item" onclick="logout(event)" style="color: #dc2626;">
         <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
         <span class="menu-text">Đăng xuất</span>
@@ -805,8 +809,9 @@
         };
 
         const allowedMenus = {
-            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking'],
-            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking'],
+            'ke-toan': ['finance-group'],
+            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking', 'finance-group'],
+            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking', 'finance-group'],
             'le-tan': ['appointments', 'schedules', 'checkin'],
             'bac-si': ['schedules', 'tracking'],
             'benh-nhan': ['appointments']
@@ -820,15 +825,24 @@
         if (subtitleEl) subtitleEl.innerText = currentSettings.subtitle;
 
         const allowed = allowedMenus[normalizedRole] || [];
-        document.querySelectorAll('#sidebarNav .nav-item[data-menu]').forEach(el => {
+                document.querySelectorAll('#sidebarNav [data-menu]').forEach(el => {
             const menuId = el.getAttribute('data-menu');
             if (!allowed.includes(menuId)) {
                 el.style.display = 'none';
             } else {
-                el.style.display = 'flex';
+                if (el.classList.contains('nav-group')) {
+                    el.style.display = 'flex';
+                } else if (el.classList.contains('usecase-nav')) {
+                    el.style.display = 'block';
+                } else {
+                    el.style.display = 'flex';
+                }
+                
                 // Set active class if this is the current page
-                if (window.location.href.includes(menuId + '.html')) {
+                if (window.location.href.includes(menuId + '.html') && menuId !== 'finance-group') {
                     el.classList.add('active');
+                    const parentGroup = el.closest('.nav-group');
+                    if (parentGroup) parentGroup.dataset.expanded = 'true';
                 } else {
                     el.classList.remove('active');
                 }

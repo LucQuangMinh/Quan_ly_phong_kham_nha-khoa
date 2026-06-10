@@ -30,6 +30,9 @@ public class DataSeeder implements CommandLineRunner {
     private com.example.demo.repository.DoctorRepository doctorRepository;
     
     @Autowired
+    private com.example.demo.repository.SalaryConfigRepository salaryConfigRepository;
+
+    @Autowired
     private EntityManager entityManager;
 
     @Override
@@ -51,6 +54,23 @@ public class DataSeeder implements CommandLineRunner {
             seedUsers();
             System.out.println("Khởi tạo xong tài khoản mẫu!");
         }
+
+        if (salaryConfigRepository.count() == 0) {
+            System.out.println("Đang khởi tạo cấu hình lương mặc định...");
+            seedSalaryConfig();
+            System.out.println("Khởi tạo xong cấu hình lương!");
+        }
+        
+        // Force update degrees for existing doctors
+        List<com.example.demo.entity.Doctor> docs = doctorRepository.findAll();
+        for (com.example.demo.entity.Doctor d : docs) {
+            if ("BS001".equals(d.getCode())) d.setDegree("Giáo sư");
+            if ("BS002".equals(d.getCode())) d.setDegree("Phó giáo sư");
+            if ("BS003".equals(d.getCode())) d.setDegree("Tiến sỹ");
+            if ("BS004".equals(d.getCode())) d.setDegree("Thạc sỹ");
+            if ("BS005".equals(d.getCode())) d.setDegree("Đại học");
+            doctorRepository.save(d);
+        }
     }
 
     private void seedUsers() {
@@ -64,6 +84,7 @@ public class DataSeeder implements CommandLineRunner {
         userRepository.save(admin);
 
         // 2. 5 Bác sĩ
+        String[] degrees = {"Giáo sư", "Phó giáo sư", "Tiến sỹ", "Thạc sỹ", "Đại học"};
         for (int i = 1; i <= 5; i++) {
             com.example.demo.entity.User userDoc = new com.example.demo.entity.User();
             userDoc.setUsername("bacsi" + i);
@@ -80,7 +101,7 @@ public class DataSeeder implements CommandLineRunner {
             doc.setPhone("090" + i + "123456");
             doc.setEmail("bacsi" + i + "@nhakhoa.com");
             doc.setWorkplace("Phòng khám chính");
-            doc.setDegree(i % 2 == 0 ? "Thạc sĩ" : "Bác sĩ CKI");
+            doc.setDegree(degrees[i - 1]);
             doc.setRoom("Phòng " + (100 + i));
             doc.setUserId(savedUser.getId());
             doc.setStatus("Hoạt động");
@@ -97,6 +118,14 @@ public class DataSeeder implements CommandLineRunner {
             userRec.setStatus("Hoạt động");
             userRepository.save(userRec);
         }
+    }
+
+    private void seedSalaryConfig() {
+        com.example.demo.entity.SalaryConfig config = new com.example.demo.entity.SalaryConfig();
+        config.setBaseHourlyRate(300000.0);
+        config.setWeekdayCoefficient(1.0);
+        config.setWeekendCoefficient(1.5);
+        salaryConfigRepository.save(config);
     }
 
     private void seedServices() {
@@ -145,6 +174,11 @@ public class DataSeeder implements CommandLineRunner {
             service.setCategory(data.category);
             service.setUnit(data.unit);
             service.setStatus("Áp dụng");
+            
+            double coeff = 0.0;
+            if ("Thẩm mỹ".equals(data.category)) coeff = 0.25;
+            else if ("Chỉnh nha".equals(data.category) || "Phẫu thuật".equals(data.category)) coeff = 0.5;
+            service.setBonusCoefficient(coeff);
             
             DentalService savedService = serviceRepository.save(service);
 

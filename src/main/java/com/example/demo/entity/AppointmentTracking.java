@@ -27,6 +27,9 @@ public class AppointmentTracking {
     
     private String room;
     
+    @Column(name = "doctor_name")
+    private String doctorName;
+    
     private String status;
     
     @Column(name = "updated_at")

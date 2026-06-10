@@ -105,17 +105,45 @@ public class CheckInController {
         return ResponseEntity.ok(Map.of("success", true, "message", "Check-in thành công! Bệnh nhân đã vào hàng đợi."));
     }
 
+    @Autowired
+    private com.example.demo.repository.CashierShiftRepository cashierShiftRepo;
+
     /**
      * Mark appointment as paid (by receptionist after examination)
      */
     @PutMapping("/{appointmentId}/paid")
-    public ResponseEntity<?> markPaid(@PathVariable Long appointmentId) {
+    public ResponseEntity<?> markPaid(
+            @PathVariable Long appointmentId,
+            @RequestParam(required = false) Double givenAmount,
+            @RequestHeader(value = "X-User-Name", defaultValue = "Lễ tân") String cashierName) {
+            
+        try { cashierName = java.net.URLDecoder.decode(cashierName, java.nio.charset.StandardCharsets.UTF_8); } catch (Exception e) {}
+
+        // State Machine Middleware: Check if shift is locked
+        java.util.Optional<com.example.demo.entity.CashierShift> shiftOpt = 
+            cashierShiftRepo.findTopByCashierNameAndShiftDateOrderByStartTimeDesc(cashierName, LocalDate.now());
+            
+        if (shiftOpt.isPresent()) {
+            String status = shiftOpt.get().getStatus();
+            if ("PENDING".equals(status)) {
+                return ResponseEntity.status(400).body(Map.of(
+                    "message", "Giao dịch bị từ chối: Quầy của bạn đang chờ duyệt chốt ca. Hãy chờ quản lý duyệt rồi mới có thể thu tiền tiếp."
+                ));
+            }
+        }
+
         PatientAppointment app = appointmentRepo.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lịch hẹn"));
 
         if (!"Khám xong".equals(app.getStatus())) {
             return ResponseEntity.badRequest()
                     .body(Map.of("message", "Lịch hẹn chưa hoàn tất khám (trạng thái hiện tại: " + app.getStatus() + ")"));
+        }
+        
+        if (app.getQuotedPrice() != null && givenAmount != null) {
+            if (givenAmount < app.getQuotedPrice()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Số tiền khách đưa (" + givenAmount + ") nhỏ hơn số tiền cần thanh toán (" + app.getQuotedPrice() + ")."));
+            }
         }
 
         app.setStatus("Đã thanh toán");

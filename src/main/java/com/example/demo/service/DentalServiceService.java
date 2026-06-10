@@ -41,6 +41,7 @@ public class DentalServiceService {
         dto.setCategory(ds.getCategory());
         dto.setDescription(ds.getDescription());
         dto.setStatus(ds.getStatus());
+        dto.setBonusCoefficient(ds.getBonusCoefficient() != null ? ds.getBonusCoefficient() : 0.0);
 
         List<ServicePrice> prices = priceRepository.findByDentalServiceId(ds.getId());
         ServicePrice activePrice = prices.stream()
@@ -60,6 +61,7 @@ public class DentalServiceService {
         service.setUnit(dto.getUnit());
         service.setCategory(dto.getCategory());
         service.setDescription(dto.getDescription());
+        service.setBonusCoefficient(dto.getBonusCoefficient() != null ? dto.getBonusCoefficient() : 0.0);
         
         // Tự động sinh mã dịch vụ
         serviceRepository.findTopByOrderByIdDesc().ifPresentOrElse(
@@ -102,6 +104,7 @@ public class DentalServiceService {
         existing.setCategory(dto.getCategory());
         existing.setDescription(dto.getDescription());
         existing.setUnit(dto.getUnit());
+        existing.setBonusCoefficient(dto.getBonusCoefficient() != null ? dto.getBonusCoefficient() : 0.0);
         
         validateServiceData(existing, id);
         DentalService savedService = serviceRepository.save(existing);

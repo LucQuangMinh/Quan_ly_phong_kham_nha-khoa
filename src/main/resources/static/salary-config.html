@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cấu hình Thiết lập Lương Bác sĩ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+          --sidebar-bg: #f8fafc; --sidebar-border: #e2e8f0; --text-primary: #1e293b; --text-muted: #64748b;
+          --active-bg: #e8f1fe; --active-text: #2563eb; --hover-bg: #f1f5f9; --radius-item: 10px;
+          --primary: #2563eb; --primary-hover: #1d4ed8; --surface: #ffffff;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; font-family: "Inter", system-ui, sans-serif; background: #fafbfc; color: var(--text-primary); display: flex; }
+        .sidebar { width: 288px; min-height: 100vh; background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); padding: 20px 12px 24px; flex-shrink: 0; }
+        .sidebar-header { padding: 4px 10px 16px; border-bottom: 1px solid var(--sidebar-border); margin-bottom: 12px; }
+        .sidebar-header h1 { margin: 0; font-size: 1rem; font-weight: 700; }
+        .sidebar-header p { margin: 4px 0 0; font-size: 0.8125rem; color: var(--text-muted); }
+        .nav { display: flex; flex-direction: column; gap: 2px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-item); font-size: 0.875rem; font-weight: 500; color: var(--text-primary); text-decoration: none; width: 100%; text-align: left; cursor: pointer; }
+        .nav-item:hover { background: var(--hover-bg); }
+        .nav-item .icon { flex-shrink: 0; width: 22px; height: 22px; color: var(--text-muted); }
+        .nav-item.active { background: var(--active-bg); color: var(--active-text); }
+        .nav-item.active .icon { color: var(--active-text); }
+        
+.nav-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav-group-toggle {
+      justify-content: space-between;
+    }
+
+    .nav-group-toggle .left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .chevron {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      transition: transform 0.2s ease;
+    }
+
+    .nav-group[data-expanded="false"]>.nav-group-toggle .chevron {
+      transform: rotate(-90deg);
+    }
+
+    .nav-group[data-expanded="false"]>.submenu {
+      display: none;
+    }
+
+    .submenu {
+      list-style: none;
+      margin: 4px 0 0;
+      padding: 4px 0 6px 8px;
+      border-left: 2px solid var(--sidebar-border);
+      margin-left: 20px;
+    }
+
+    .submenu .usecase-nav {
+      display: block;
+      width: 100%;
+      padding: 9px 12px;
+      margin: 2px 0;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-align: left;
+      cursor: pointer;
+      line-height: 1.35;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .submenu .usecase-nav:hover {
+      background: var(--hover-bg);
+      color: var(--text-primary);
+    }
+
+    .submenu .usecase-nav.active {
+      background: var(--active-bg);
+      color: var(--active-text);
+      font-weight: 600;
+    }
+        main { flex: 1; padding: 24px 32px 40px; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; }
+        .content-shell { max-width: 1000px; margin: 0 auto; width: 100%; }
+        
+        .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-head h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+        
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; }
+        .card-title { margin-top: 0; margin-bottom: 16px; font-size: 1.125rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.875rem; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9375rem; font-family: inherit; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .form-text { font-size: 0.8125rem; color: var(--text-muted); margin-top: 4px; }
+        
+        .btn { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9375rem; transition: background 0.2s; }
+        .btn:hover { background: var(--primary-hover); }
+        
+        /* Calendar Styles */
+        .calendar-header-actions { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .calendar-header-cell { text-align: center; font-weight: 600; font-size: 0.875rem; padding: 8px; background: #f8fafc; border-radius: 6px; cursor: pointer; transition: background 0.15s; border: 1px solid transparent;}
+        .calendar-header-cell:hover { background: #e2e8f0; border-color: #cbd5e1; }
+        .calendar-day-cell { min-height: 80px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; background: #fff;}
+        .calendar-day-cell:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(37,99,235,0.1); }
+        .calendar-day-cell.other-month { opacity: 0.3; cursor: default; }
+        .calendar-day-cell.other-month:hover { border-color: #e2e8f0; box-shadow: none; }
+        .calendar-day-cell.multiplier { background: #fef9c3; border-color: #fef08a; }
+        .calendar-day-cell.multiplier:hover { background: #fef08a; border-color: #fde047; }
+        .day-num { font-weight: 600; font-size: 1rem; }
+        .day-label { font-size: 0.6875rem; font-weight: 600; color: #ca8a04; margin-top: 4px; display: none; }
+        .calendar-day-cell.multiplier .day-label { display: block; }
+        .calendar-day-cell.multiplier .day-num { color: #854d0e; }
+
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.875rem; }
+        th { background: #f8fafc; font-weight: 600; color: #475569; }
+        td input { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100px; text-align: center; }
+
+        .btn-logout { margin-top: auto; color: #dc2626; background: #fef2f2; width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar" aria-label="Điều hướng chính" id="dynamicSidebar">
+    <header class="sidebar-header">
+      <h1 id="sidebarTitle">Hệ thống Nha Khoa</h1>
+      <p id="sidebarSubtitle">Vai trò</p>
+    </header>
+
+    <nav class="nav" id="sidebarNav" aria-label="Menu chính">
+            <a href="checkin.html" class="nav-item checkin-menu" data-menu="checkin">
+        <span class="icon" aria-hidden="true">📍</span>
+        <span class="menu-text">Tiếp đón (Check-in)</span>
+      </a>
+<a href="appointments.html" class="nav-item" data-menu="appointments">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span>
+        <span class="menu-text">Đăng ký khám</span>
+      </a>
+      <a href="tracking.html" class="nav-item" data-menu="tracking">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg></span>
+        <span class="menu-text">Theo dõi lịch khám</span>
+      </a>
+      <a href="schedules.html" class="nav-item" data-menu="schedules">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span>
+        <span class="menu-text">Lịch trực bác sĩ</span>
+      </a>
+      <a href="doctors.html" class="nav-item" data-menu="doctors">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+        <span class="menu-text">Hồ sơ Bác sĩ</span>
+      </a>
+      <a href="users.html" class="nav-item" data-menu="users">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+        <span class="menu-text">Quản lý Người dùng</span>
+      </a>
+      <a href="services.html" class="nav-item" data-menu="services">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>
+        <span class="menu-text">Danh mục Dịch vụ</span>
+      </a>
+      
+      <a href="holidays.html" class="nav-item" data-menu="holidays">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg></span>
+        <span class="menu-text">Thiết lập ngày nghỉ</span>
+      </a>
+      <a href="shifts.html" class="nav-item" data-menu="shifts">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
+        <span class="menu-text">Thiết lập ca làm việc</span>
+      </a>
+            <a href="revenue.html" class="nav-item" data-menu="finance-group">
+        <span class="icon" aria-hidden="true">💰</span>
+        <span class="menu-text">Tài chính & Lương</span>
+      </a>
+<div style="margin-top: 30px; border-top: 1px solid var(--sidebar-border); padding-top: 10px;"></div>
+      <a href="#" class="nav-item" onclick="logout(event)" style="color: #dc2626;">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
+        <span class="menu-text">Đăng xuất</span>
+      </a>
+    </nav>
+  </aside>
+
+    <main>
+        <div class="content-shell">
+            <div class="page-head">
+                <h1>Bảng Điều Khiển Cấu hình Lương</h1>
+            </div>
+
+            <!-- UC4.1 -->
+            <div class="card">
+                <h3 class="card-title">1. Mức tiền cơ bản (UC4.1)</h3>
+                <form id="configForm" onsubmit="saveBaseConfig(event)" style="display: flex; gap: 16px; align-items: flex-end;">
+                    <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                        <label for="baseHourlyRate">Số tiền một giờ (VNĐ) <span style="color: #dc2626">*</span></label>
+                        <input type="number" id="baseHourlyRate" required min="1" step="1000" placeholder="Ví dụ: 300000">
+                        <div class="form-text">Mức lương cơ bản áp dụng cho 1 giờ làm việc. (Hệ số bằng cấp sẽ nhân trực tiếp với số này).</div>
+                    </div>
+                    <button type="submit" class="btn">Lưu cấu hình</button>
+                </form>
+            </div>
+
+            <!-- UC4.2 -->
+            <div class="card">
+                <h3 class="card-title">2. Lịch thiết lập Hệ số Ngày (UC4.2)</h3>
+                <div class="form-text" style="margin-bottom: 16px;">
+                    - Nhấp vào <strong>tiêu đề cột (VD: Chủ Nhật)</strong> để gán/hủy hệ số 1.5 cho toàn bộ cột đó trong tháng.<br>
+                    - Nhấp vào <strong>từng ngày</strong> để gán/hủy hệ số 1.5 cho ngày đó (VD: ngày lễ).
+                </div>
+                
+                <div class="calendar-header-actions">
+                    <select id="calMonth" onchange="renderCalendar()">
+                        <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+                        <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+                        <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+                        <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+                        <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+                        <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                    </select>
+                    <input type="number" id="calYear" value="2026" style="width: 100px; padding: 8px;" onchange="renderCalendar()">
+                </div>
+
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- JS sẽ render header và days -->
+                </div>
+            </div>
+
+            <!-- UC4.3 -->
+            <div class="card">
+                <h3 class="card-title">3. Hệ số Ca phức tạp theo Dịch vụ (UC4.3)</h3>
+                <div class="form-text" style="margin-bottom: 16px;">
+                    Điều chỉnh hệ số tự động cộng dồn cho Bác sĩ khi thực hiện dịch vụ này. (VD: Thẩm mỹ: 0.25, Phẫu thuật: 0.5)
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã DV</th>
+                            <th>Tên Dịch vụ</th>
+                            <th>Nhóm Dịch vụ</th>
+                            <th>Hệ số Thưởng</th>
+                            <th style="text-align: right;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="servicesTableBody">
+                        <tr><td colspan="5" style="text-align: center;">Đang tải...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        let multiplierDays = [];
+        let servicesList = [];
+
+        window.onload = async function() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = '/'; return; }
+            const currentUser = JSON.parse(userStr);
+            const role = (currentUser.role || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+            
+            if (!role.includes('admin') && !role.includes('quan-ly') && !role.includes('ke toan')) {
+                alert('Chỉ Admin hoặc Quản lý mới có quyền truy cập trang này!');
+                window.location.href = '/';
+                return;
+            }
+            
+            // Set current month/year
+            const now = new Date();
+            document.getElementById('calMonth').value = now.getMonth() + 1;
+            document.getElementById('calYear').value = now.getFullYear();
+
+            await loadBaseConfig();
+            await renderCalendar();
+            await loadServices();
+        };
+
+        // --- UC4.1 Base Config ---
+        async function loadBaseConfig() {
+            try {
+                const res = await fetch('/api/salary-config');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.baseHourlyRate) {
+                        document.getElementById('baseHourlyRate').value = data.baseHourlyRate;
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function saveBaseConfig(e) {
+            e.preventDefault();
+            const rate = parseFloat(document.getElementById('baseHourlyRate').value);
+            try {
+                const res = await fetch('/api/salary-config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ baseHourlyRate: rate })
+                });
+                if (res.ok) {
+                    alert('Lưu mức tiền cơ bản thành công!');
+                } else {
+                    const err = await res.json();
+                    alert('Lỗi: ' + err.message);
+                }
+            } catch (error) { alert('Lỗi kết nối!'); }
+        }
+
+        // --- UC4.2 Calendar ---
+        async function fetchMultiplierDays(month, year) {
+            try {
+                const res = await fetch(`/api/salary-config/multiplier-days?month=${month}&year=${year}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    multiplierDays = data.map(d => d.date);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function renderCalendar() {
+            const month = parseInt(document.getElementById('calMonth').value);
+            const year = parseInt(document.getElementById('calYear').value);
+            await fetchMultiplierDays(month, year);
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+            dayNames.forEach((d, index) => {
+                const col = document.createElement('div');
+                col.className = 'calendar-header-cell';
+                col.textContent = d;
+                col.onclick = () => toggleColumn(index, month, year);
+                grid.appendChild(col);
+            });
+
+            const firstDay = new Date(year, month - 1, 1);
+            let startDayOfWeek = firstDay.getDay() - 1; 
+            if (startDayOfWeek === -1) startDayOfWeek = 6; 
+
+            const daysInMonth = new Date(year, month, 0).getDate();
+
+            // Previous month cells
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day-cell other-month';
+                grid.appendChild(cell);
+            }
+
+            // Current month cells
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day-cell';
+                if (multiplierDays.includes(dateStr)) {
+                    cell.classList.add('multiplier');
+                }
+                cell.innerHTML = `<span class="day-num">${i}</span><span class="day-label">Hệ số 1.5</span>`;
+                cell.onclick = () => toggleDay(dateStr);
+                grid.appendChild(cell);
+            }
+        }
+
+        async function toggleDay(dateStr) {
+            try {
+                const res = await fetch('/api/salary-config/multiplier-days/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: dateStr })
+                });
+                if (res.ok) {
+                    await renderCalendar();
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function toggleColumn(colIndex, month, year) {
+            // colIndex 0 = Monday, 6 = Sunday
+            // To toggle, we just hit the API for all dates matching this weekday in the month
+            const daysInMonth = new Date(year, month, 0).getDate();
+            let datesToToggle = [];
+            for (let i = 1; i <= daysInMonth; i++) {
+                const d = new Date(year, month - 1, i);
+                let dayOfWeek = d.getDay() - 1;
+                if (dayOfWeek === -1) dayOfWeek = 6;
+                if (dayOfWeek === colIndex) {
+                    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                    datesToToggle.push(dateStr);
+                }
+            }
+            
+            // To be robust, we determine if we are adding or removing. 
+            // If the first date is already multiplier, we remove all. Else we add all.
+            const firstDateStr = datesToToggle[0];
+            const isAdding = !multiplierDays.includes(firstDateStr);
+            
+            for (let dateStr of datesToToggle) {
+                if ((isAdding && !multiplierDays.includes(dateStr)) || (!isAdding && multiplierDays.includes(dateStr))) {
+                    await fetch('/api/salary-config/multiplier-days/toggle', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ date: dateStr })
+                    });
+                }
+            }
+            await renderCalendar();
+        }
+
+        // --- UC4.3 Services Coefficient ---
+        async function loadServices() {
+            try {
+                const authUser = JSON.parse(localStorage.getItem('user') || '{}');
+                const role = authUser.role || 'Admin';
+                const res = await fetch('/api/services', { headers: { 'X-Role': role }});
+                if (res.ok) {
+                    servicesList = await res.json();
+                    const tbody = document.getElementById('servicesTableBody');
+                    tbody.innerHTML = '';
+                    servicesList.forEach(s => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><b>${s.code}</b></td>
+                            <td>${s.name}</td>
+                            <td><span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size:0.75rem">${s.category}</span></td>
+                            <td>
+                                <input type="number" id="coeff_${s.id}" value="${s.bonusCoefficient || 0.0}" step="0.05" min="0" max="2.0">
+                            </td>
+                            <td style="text-align: right;">
+                                <button class="btn" style="padding: 6px 12px; font-size: 0.8125rem" onclick="updateServiceCoeff(${s.id})">Lưu hệ số</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function updateServiceCoeff(id) {
+            const s = servicesList.find(x => x.id === id);
+            const newCoeff = parseFloat(document.getElementById(`coeff_${id}`).value);
+            s.bonusCoefficient = newCoeff;
+            
+            try {
+                const res = await fetch('/api/services/' + id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-Role': 'Admin' },
+                    body: JSON.stringify(s)
+                });
+                if (res.ok) {
+                    // flash success on the button
+                    const btn = event.target;
+                    const oldText = btn.textContent;
+                    btn.textContent = 'Đã lưu ✓';
+                    btn.style.background = '#10b981';
+                    setTimeout(() => {
+                        btn.textContent = oldText;
+                        btn.style.background = 'var(--primary)';
+                    }, 2000);
+                } else {
+                    alert('Lỗi cập nhật!');
+                }
+            } catch(e) { alert('Lỗi mạng!'); }
+        }
+
+        function logout(e) {
+            e.preventDefault();
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+    </script>
+<script>
+
+    function setupDynamicUI() {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || !user.role) return;
+
+        let normalizedRole = user.role.toLowerCase()
+            .replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+
+        const titleMap = {
+            'admin': { title: 'Quản trị Viên', subtitle: 'Phòng Hành chính' },
+            'quan-ly-phong-kham': { title: 'Quản lý', subtitle: 'Phòng Khám Nha Khoa' },
+            'le-tan': { title: 'Lễ tân', subtitle: 'Quầy tiếp đón' },
+            'bac-si': { title: 'Bác sĩ', subtitle: 'Chuyên môn' },
+            'benh-nhan': { title: 'Bệnh nhân', subtitle: 'Cổng thông tin' }
+        };
+
+        const allowedMenus = {
+            'ke-toan': ['finance-group'],
+            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking', 'finance-group'],
+            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking', 'finance-group'],
+            'le-tan': ['appointments', 'tracking', 'schedules', 'checkin'],
+            'bac-si': ['schedules', 'tracking'],
+            'benh-nhan': ['appointments']
+        };
+
+        const currentSettings = titleMap[normalizedRole] || { title: 'Hệ thống', subtitle: 'Người dùng' };
+        
+        const titleEl = document.getElementById('sidebarTitle');
+        const subtitleEl = document.getElementById('sidebarSubtitle');
+        if (titleEl) titleEl.innerText = currentSettings.title;
+        if (subtitleEl) subtitleEl.innerText = currentSettings.subtitle;
+
+        const allowed = allowedMenus[normalizedRole] || [];
+                document.querySelectorAll('#sidebarNav [data-menu]').forEach(el => {
+            const menuId = el.getAttribute('data-menu');
+            if (!allowed.includes(menuId)) {
+                el.style.display = 'none';
+            } else {
+                if (el.classList.contains('nav-group')) {
+                    el.style.display = 'flex';
+                } else if (el.classList.contains('usecase-nav')) {
+                    el.style.display = 'block';
+                } else {
+                    el.style.display = 'flex';
+                }
+                
+                // Set active class if this is the current page
+                if (window.location.href.includes(menuId + '.html') && menuId !== 'finance-group') {
+                    el.classList.add('active');
+                    const parentGroup = el.closest('.nav-group');
+                    if (parentGroup) parentGroup.dataset.expanded = 'true';
+                } else {
+                    el.classList.remove('active');
+                }
+            }
+        });
+    }
+
+</script>
+<script>document.addEventListener('DOMContentLoaded', setupDynamicUI);</script>
+</body>
+</html>

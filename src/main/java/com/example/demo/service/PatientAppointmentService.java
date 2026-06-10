@@ -82,6 +82,7 @@ public class PatientAppointmentService {
             Optional<Doctor> doc = doctorRepo.findById(saved.getDoctorId());
             if (doc.isPresent()) {
                 tracking.setRoom(doc.get().getRoom());
+                tracking.setDoctorName(doc.get().getFullname());
             }
         }
         
@@ -138,6 +139,11 @@ public class PatientAppointmentService {
         existing.setExaminationDate(newData.getExaminationDate());
         existing.setShiftType(newData.getShiftType());
         existing.setNote(newData.getNote());
+        
+        if (newData.getServiceId() != null) existing.setServiceId(newData.getServiceId());
+        if (newData.getServiceName() != null) existing.setServiceName(newData.getServiceName());
+        if (newData.getQuotedPrice() != null) existing.setQuotedPrice(newData.getQuotedPrice());
+        
         existing.setStatus(newStatus);
         
         PatientAppointment saved = appointmentRepo.save(existing);
@@ -149,6 +155,7 @@ public class PatientAppointmentService {
                 Optional<Doctor> doc = doctorRepo.findById(saved.getDoctorId());
                 if (doc.isPresent()) {
                     tracking.setRoom(doc.get().getRoom());
+                    tracking.setDoctorName(doc.get().getFullname());
                 }
             }
             if ("Hủy".equals(saved.getStatus())) {

@@ -45,7 +45,7 @@ public class ScheduledAbsenceTask {
                 shouldMarkAbsent = true;
             } else if ("Chiều".equalsIgnoreCase(app.getShiftType()) && now.isAfter(LocalTime.of(17, 0))) {
                 shouldMarkAbsent = true;
-            } else if ("Tối".equalsIgnoreCase(app.getShiftType()) && now.isAfter(LocalTime.of(21, 0))) {
+            } else if ("Tối".equalsIgnoreCase(app.getShiftType()) && now.isAfter(LocalTime.of(23, 30))) {
                 shouldMarkAbsent = true;
             }
 

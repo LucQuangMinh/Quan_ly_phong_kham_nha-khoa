@@ -25,4 +25,7 @@ public class DentalService {
     private String description;
     
     private String status;
+
+    @Column(name = "bonus_coefficient", columnDefinition = "DOUBLE DEFAULT 0.0")
+    private Double bonusCoefficient;
 }
