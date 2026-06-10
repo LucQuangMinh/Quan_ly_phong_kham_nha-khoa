@@ -45,7 +45,10 @@ spring.jpa.hibernate.ddl-auto=update
 
 ---
 ### Ghi chú các tài khoản có sẵn để test
-- **Admin**: `admin` / pass: (tuỳ bạn tạo)
-- **Lễ tân**: `letan1`
-- **Quản lý**: `quanly1`
-- **Bác sĩ**: Xem trong bảng `doctors` hoặc `users` ở database.
+Vì file `database.sql` đã sao chép y nguyên trạng thái database của bạn, nên các tài khoản và mật khẩu sẽ **giống hệt như những gì bạn đang dùng**.
+
+Dưới đây là một số tài khoản mặc định có trong hệ thống:
+- **Admin**: `admin` / mật khẩu: `admin123` (hoặc mật khẩu bạn đã đổi)
+- **Lễ tân**: `letan1`, `letan2` / mật khẩu: `123456`
+- **Quản lý**: `quanly1` / mật khẩu: `123456`
+- **Bác sĩ**: `bacsi1` đến `bacsi5` / mật khẩu: `123456`
