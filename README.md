@@ -39,9 +39,18 @@ spring.jpa.hibernate.ddl-auto=update
 ```
 
 ### Bước 4: Chạy dự án
-1. Mở dự án bằng IDE (IntelliJ IDEA, Eclipse, VS Code...).
-2. Chạy file `DemoApplication.java` (chứa hàm `main`).
-3. Mở trình duyệt và truy cập `http://localhost:8080` để sử dụng hệ thống.
+Có 2 cách để chạy dự án:
+
+**Cách 1: Chạy bằng dòng lệnh (Khuyên dùng nếu không quen dùng IDE)**
+Mở Terminal / Command Prompt tại thư mục gốc của dự án và gõ lệnh:
+- Trên Windows: `.\mvnw spring-boot:run`
+- Trên Mac/Linux: `./mvnw spring-boot:run`
+
+**Cách 2: Chạy bằng IDE (IntelliJ IDEA, Eclipse, VS Code...)**
+1. Mở thư mục dự án bằng IDE.
+2. Tìm và chạy file `src/main/java/com/example/demo/DemoApplication.java` (chứa hàm `main`).
+
+Sau khi ứng dụng báo chạy thành công, mở trình duyệt và truy cập `http://localhost:8080` để sử dụng hệ thống.
 
 ---
 ### Ghi chú các tài khoản có sẵn để test
