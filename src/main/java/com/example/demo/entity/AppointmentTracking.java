@@ -35,5 +35,11 @@ public class AppointmentTracking {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    @Column(name = "arrived_at")
+    private LocalDateTime arrivedAt;
+    
+    @Column(name = "finished_at")
+    private LocalDateTime finishedAt;
+    
     private String note;
 }

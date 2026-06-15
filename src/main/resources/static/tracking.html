@@ -141,6 +141,10 @@
         <span class="menu-text">Tài chính & Lương</span>
       </a>
 <div style="margin-top: 30px; border-top: 1px solid var(--sidebar-border); padding-top: 10px;"></div>
+      <a href="profile.html" class="nav-item" data-menu="profile">
+        <span class="icon" aria-hidden="true">👤</span>
+        <span class="menu-text">Thông tin tài khoản</span>
+      </a>
       <a href="#" class="nav-item" onclick="logout(event)" style="color: #dc2626;">
         <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
         <span class="menu-text">Đăng xuất</span>
@@ -425,6 +429,12 @@
                                 <a class="action-link" style="color: #3b82f6; font-weight: 600;" onclick="openExamModal(${t.id}, ${t.appointmentId})">🩺 Khám bệnh</a>
                             </td>
                         `;
+                    } else if (t.status === 'Đã khám') {
+                        actionsHtml = `
+                            <td style="white-space: nowrap;">
+                                <a class="action-link" style="color: #10b981; font-weight: 600;" onclick="openPatientRecordModal(${t.id}, ${t.appointmentId})">📄 Xem bệnh án</a>
+                            </td>
+                        `;
                     } else {
                         actionsHtml = `<td></td>`;
                     }
@@ -438,7 +448,7 @@
                     } else if (t.status === 'Đã khám') {
                         actionsHtml = `
                             <td style="white-space: nowrap;">
-                                <a class="action-link" style="color: #10b981; font-weight: 600;" onclick="openPatientRecordModal(${t.appointmentId})">📄 Xem hồ sơ</a>
+                                <a class="action-link" style="color: #10b981; font-weight: 600;" onclick="openPatientRecordModal(${t.id}, ${t.appointmentId})">📄 Xem hồ sơ</a>
                             </td>
                         `;
                     } else {
@@ -550,16 +560,29 @@
         }
 
         
-        async function openPatientRecordModal(appointmentId) {
-            if (!appointmentId) return;
+        async function openPatientRecordModal(trackingId, appointmentId) {
+            const t = trackings.find(x => x.id === trackingId);
+            if (!appointmentId || !t) return;
             try {
                 const res = await fetch(`/api/patient-appointments/${appointmentId}`);
                 if (res.ok) {
                     const app = await res.json();
-                    document.getElementById('prPatientName').value = app.patientName;
+                    document.getElementById('prPatientName').value = t.patientName || app.patientName;
+                    document.getElementById('prDoctorName').value = t.doctorName || 'Chưa có thông tin';
+                    
+                    const formatDt = (dtStr) => {
+                        if (!dtStr) return 'Chưa có thông tin';
+                        const d = new Date(dtStr);
+                        return d.toLocaleString('vi-VN', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric'});
+                    };
+                    
+                    document.getElementById('prBookingTime').value = formatDt(app.createdAt);
+                    document.getElementById('prArrivalTime').value = formatDt(t.arrivedAt);
+                    document.getElementById('prFinishedTime').value = formatDt(t.finishedAt);
+                    
                     document.getElementById('prServiceName').value = app.serviceName || 'Chưa cập nhật';
                     document.getElementById('prPrice').value = app.quotedPrice ? app.quotedPrice.toLocaleString('vi-VN') + ' đ' : '0 đ';
-                    document.getElementById('prNote').value = app.note || 'Không có ghi chú';
+                    document.getElementById('prNote').value = app.note || t.note || 'Không có ghi chú';
                     
                     document.getElementById('patientRecordModal').style.display = 'flex';
                 }
@@ -810,6 +833,7 @@
         if (subtitleEl) subtitleEl.innerText = currentSettings.subtitle;
 
         const allowed = allowedMenus[normalizedRole] || [];
+        if (!allowed.includes('profile')) allowed.push('profile');
                 document.querySelectorAll('#sidebarNav [data-menu]').forEach(el => {
             const menuId = el.getAttribute('data-menu');
             if (!allowed.includes(menuId)) {
@@ -883,6 +907,26 @@
             <div class="form-group">
                 <label>Họ tên</label>
                 <input type="text" id="prPatientName" class="form-control" disabled style="background-color: #f8fafc; font-weight: 600;">
+            </div>
+            
+            <div class="form-group">
+                <label>Bác sĩ</label>
+                <input type="text" id="prDoctorName" class="form-control" disabled style="background-color: #f8fafc;">
+            </div>
+            
+            <div class="form-group" style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label>Ngày giờ đặt</label>
+                    <input type="text" id="prBookingTime" class="form-control" disabled style="background-color: #f8fafc;">
+                </div>
+                <div style="flex: 1;">
+                    <label>Ngày giờ đến</label>
+                    <input type="text" id="prArrivalTime" class="form-control" disabled style="background-color: #f8fafc;">
+                </div>
+                <div style="flex: 1;">
+                    <label>Ngày giờ khám xong</label>
+                    <input type="text" id="prFinishedTime" class="form-control" disabled style="background-color: #f8fafc;">
+                </div>
             </div>
             
             <div class="form-group">

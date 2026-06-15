@@ -12,14 +12,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/services")
-@PreAuthorize(roles = {"Admin", "Quản lý phòng khám"})
+@PreAuthorize(roles = {"Admin", "Quản lý phòng khám", "Kế toán"})
 public class DentalServiceController {
 
     @Autowired
     private DentalServiceService dentalServiceService;
 
     @GetMapping
-    @PreAuthorize(roles = {"Admin", "Quản lý phòng khám", "Lễ tân", "Bác sĩ", "Bệnh nhân"})
+    @PreAuthorize(roles = {"Admin", "Quản lý phòng khám", "Kế toán", "Lễ tân", "Bác sĩ", "Bệnh nhân"})
     public List<ServiceDTO> getAllServices() {
         return dentalServiceService.getAllServices();
     }

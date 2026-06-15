@@ -154,6 +154,10 @@
         <span class="menu-text">Tài chính & Lương</span>
       </a>
 <div style="margin-top: 30px; border-top: 1px solid var(--sidebar-border); padding-top: 10px;"></div>
+      <a href="profile.html" class="nav-item" data-menu="profile">
+        <span class="icon" aria-hidden="true">👤</span>
+        <span class="menu-text">Thông tin tài khoản</span>
+      </a>
       <a href="#" class="nav-item" onclick="logout(event)" style="color: #dc2626;">
         <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
         <span class="menu-text">Đăng xuất</span>
@@ -206,15 +210,7 @@
               <!-- Rendered by JS -->
             </div>
             
-            <div class="doc-pane-header" style="background: #fce7f3; color: #be185d; border-top: 1px solid #cbd5e1;">
-              <span>Danh sách Lễ tân</span>
-              <label style="font-size: 0.8125rem; font-weight: normal; cursor: pointer;">
-                <input type="checkbox" id="selectAllRecs" onchange="toggleAllRecs()" /> Chọn hết
-              </label>
-            </div>
-            <div class="doc-list" id="receptionistList" style="max-height: 30vh; overflow-y: auto;">
-              <!-- Rendered by JS -->
-            </div>
+
           </div>
         </div>
     </div>
@@ -286,18 +282,7 @@
             if (!sRes.ok) throw new Error("API /api/schedules failed with status " + sRes.status);
             allSchedules = await sRes.json();
             
-            if (currentRoleLower.includes('le tan') || isAdmin) {
-                const recUrl = `/api/schedules/receptionists?start=${getLocalIsoDate(gridStartDate)}&end=${getLocalIsoDate(gridEndDate)}&userId=${currentUser.id}&role=${encodeURIComponent(currentUser.role)}`;
-                const rRes = await fetch(recUrl, { headers, cache: 'no-store' });
-                if (rRes.ok) {
-                    const recData = await rRes.json();
-                    recData.forEach(r => {
-                        r.isReceptionist = true;
-                        r.doctor = { fullname: r.receptionist ? r.receptionist.fullname : 'N/A' };
-                    });
-                    allSchedules = allSchedules.concat(recData);
-                }
-            }
+
             
             const shiftRes = await fetch(`/api/shifts?start=${getLocalIsoDate(gridStartDate)}&end=${getLocalIsoDate(gridEndDate)}`, { headers, cache: 'no-store' });
             if (!shiftRes.ok) throw new Error("API /api/shifts failed with status " + shiftRes.status);
@@ -312,12 +297,7 @@
                 allDoctors = await dRes.json();
                 renderDoctorList();
                 
-                const uRes = await fetch('/api/users', { headers, cache: 'no-store' });
-                if (uRes.ok) {
-                    const users = await uRes.json();
-                    allReceptionists = users.filter(u => u.role && u.role.trim().toLowerCase() === 'lễ tân');
-                    renderReceptionistList();
-                }
+
                 
                 // Phục hồi lại trạng thái checkbox
                 document.querySelectorAll('.doc-checkbox').forEach(cb => {
@@ -444,7 +424,7 @@
                         if (!isActive) return; // Do not render inactive shifts
                         hasAnyShift = true;
                         
-                        let blockClick = isAdmin ? `onclick="toggleShiftAdmin('${isoStr}', '${st}')"` : `onclick="toggleShiftDoctor('${isoStr}', '${st}')"`;
+                        let blockClick = isAdmin ? `onclick="toggleShiftAdmin('${isoStr}', '${st}')"` : (currentRoleLower.includes('bac si') ? `onclick="toggleShiftDoctor('${isoStr}', '${st}')"` : '');
                         
                         let tagsHtml = '';
                         let daySchedules = allSchedules.filter(s => s.shiftDate === isoStr && s.shiftType === st);
@@ -493,7 +473,7 @@
                             }
                         });
                         
-                        if (!isAdmin && tagsHtml === '') {
+                        if (!isAdmin && currentRoleLower.includes('bac si') && tagsHtml === '') {
                              tagsHtml = `<div class="doc-tag" style="background: transparent; border: 1px dashed #cbd5e1; color: #94a3b8; justify-content: center; font-style: italic;">Đăng ký trực</div>`;
                         }
                         
@@ -549,9 +529,8 @@
 
     async function toggleWeekAdmin(startDate, shiftType) {
         const docIds = getSelectedDoctorIds();
-        const recIds = getSelectedRecIds();
-        if (docIds.length === 0 && recIds.length === 0) {
-            alert('Vui lòng tích chọn ít nhất một Bác sĩ hoặc Lễ tân từ danh sách bên phải để xếp lịch tuần!');
+        if (docIds.length === 0) {
+            alert('Vui lòng tích chọn ít nhất một Bác sĩ từ danh sách bên phải để xếp lịch tuần!');
             return;
         }
 
@@ -570,17 +549,7 @@
             }
         }
 
-        if (recIds.length > 0) {
-            const rRes = await fetch('/api/schedules/receptionists/toggle-week', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Role': encodeURIComponent(currentUser.role) },
-                body: JSON.stringify({ userIds: recIds, startDate, shiftType })
-            });
-            if (!rRes.ok) {
-                success = false;
-                errorMsg += (await rRes.json()).message + '\n';
-            }
-        }
+
 
         if (success) {
             loadData();
@@ -592,9 +561,8 @@
 
     async function toggleShiftAdmin(date, shiftType) {
         const docIds = getSelectedDoctorIds();
-        const recIds = getSelectedRecIds();
-        if (docIds.length === 0 && recIds.length === 0) {
-            alert('Vui lòng tích chọn ít nhất một Bác sĩ hoặc Lễ tân từ danh sách bên phải!');
+        if (docIds.length === 0) {
+            alert('Vui lòng tích chọn ít nhất một Bác sĩ từ danh sách bên phải!');
             return;
         }
         let success = true;
@@ -610,17 +578,7 @@
                 errorMsg += (await res.json()).message + '\n';
             }
         }
-        if (recIds.length > 0) {
-            const res = await fetch('/api/schedules/receptionists/toggle-bulk', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Role': encodeURIComponent(currentUser.role) },
-                body: JSON.stringify({ userIds: recIds, date, shiftType })
-            });
-            if (!res.ok) {
-                success = false;
-                errorMsg += (await res.json()).message + '\n';
-            }
-        }
+
         if (success) {
             loadData();
         } else {
@@ -703,6 +661,7 @@
         if (subtitleEl) subtitleEl.innerText = currentSettings.subtitle;
 
         const allowed = allowedMenus[normalizedRole] || [];
+        if (!allowed.includes('profile')) allowed.push('profile');
                 document.querySelectorAll('#sidebarNav [data-menu]').forEach(el => {
             const menuId = el.getAttribute('data-menu');
             if (!allowed.includes(menuId)) {

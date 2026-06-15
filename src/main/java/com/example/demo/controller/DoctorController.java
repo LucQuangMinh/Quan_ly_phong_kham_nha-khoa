@@ -13,14 +13,14 @@ import com.example.demo.security.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/doctors")
-@PreAuthorize(roles = {"Admin", "Quản lý phòng khám"})
+@PreAuthorize(roles = {"Admin", "Quản lý phòng khám", "Kế toán"})
 public class DoctorController {
 
     @Autowired
     private DoctorService doctorService;
 
     @GetMapping
-    @PreAuthorize(roles = {"Admin", "Quản lý phòng khám", "Lễ tân", "Bác sĩ", "Bệnh nhân"})
+    @PreAuthorize(roles = {"Admin", "Quản lý phòng khám", "Kế toán", "Lễ tân", "Bác sĩ", "Bệnh nhân"})
     public List<Doctor> getAllDoctors() {
         return doctorService.getAllDoctors();
     }

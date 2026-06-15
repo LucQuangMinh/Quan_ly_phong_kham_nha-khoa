@@ -188,7 +188,7 @@
     }
 
     .content-shell {
-      max-width: 960px;
+      max-width: 1600px;
       margin: 0 auto;
     }
 
@@ -1295,6 +1295,10 @@
       </a>
 
       <div style="margin-top: 30px; border-top: 1px solid var(--sidebar-border); padding-top: 10px;"></div>
+      <a href="profile.html" class="nav-item" data-menu="profile">
+        <span class="icon" aria-hidden="true">👤</span>
+        <span class="menu-text">Thông tin tài khoản</span>
+      </a>
       <a href="#" class="nav-item" onclick="logout(event)" style="color: #dc2626;">
         <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
         <span class="menu-text">Đăng xuất</span>
@@ -1310,7 +1314,7 @@
       </div>
       <div class="card">
         <div class="toolbar">
-          <input type="text" id="searchInput" class="search" placeholder="Tìm kiếm theo mã, tên, sđt..." onkeyup="loadDocs()" />
+          <input type="text" id="searchInput" class="search" placeholder="Tìm kiếm theo mã, tên, sđt..." autocomplete="off" onkeyup="loadDocs()" />
           <select id="statusFilter" class="search" style="max-width: 200px;" onchange="loadDocs()">
             <option value="">Tất cả trạng thái</option>
             <option value="Đang làm việc">Đang làm việc</option>
@@ -1326,7 +1330,7 @@
                 <th>Ngày sinh</th>
                 <th>SĐT / Email</th>
                 <th>Bằng cấp</th>
-                <th>Tài khoản</th>
+
                 <th>Trạng thái</th>
                 <th>Thao tác</th>
               </tr>
@@ -1359,12 +1363,7 @@
               <option value="Đại học">Đại học</option>
             </select>
           </div>
-          <div class="field-full">
-            <label>Tài khoản liên kết (Chỉ hiển thị User có Role: Bác sĩ)</label>
-            <select id="docUserId">
-                <option value="">-- Không gán tài khoản --</option>
-            </select>
-          </div>
+
         </div>
         <div class="form-actions">
           <button class="btn btn-ghost" onclick="closeModal('addDocModal')">Hủy</button>
@@ -1373,26 +1372,7 @@
       </div>
     </div>
 
-    <!-- Modal Gán tài khoản (Cách 2) -->
-    <div class="modal-backdrop" id="assignModal">
-      <div class="modal">
-        <h2>Gán tài khoản cho Bác sĩ</h2>
-        <input type="hidden" id="assignDocId" />
-        <p>Bác sĩ: <strong id="assignDocName"></strong></p>
-        <div class="form-grid" style="grid-template-columns: 1fr;">
-          <div class="field">
-            <label>Chọn tài khoản User</label>
-            <select id="assignUserId">
-                <option value="">-- Chọn tài khoản --</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-ghost" onclick="closeModal('assignModal')">Hủy</button>
-          <button class="btn btn-primary" onclick="submitAssignUser()">Cập nhật</button>
-        </div>
-      </div>
-    </div>
+
 
   </main>
 
@@ -1407,55 +1387,9 @@
         };
     }
 
-    let allUsers = [];
 
-    // Lấy danh sách users để map userId -> username và điền vào dropdown
-    async function fetchUsers() {
-        try {
-            const res = await fetch('/api/users', {headers: getAuthHeaders()});
-            if (res.ok) {
-                allUsers = await res.json();
-            }
-        } catch (e) {
-            console.error("Could not fetch users", e);
-        }
-    }
-
-    async function populateUserDropdown(selectId, currentUserId = null) {
-        const select = document.getElementById(selectId);
-        select.innerHTML = '<option value="">-- Không gán / Chọn tài khoản --</option>';
-        
-        try {
-            const res = await fetch('/api/users/unassigned-doctors', {headers: getAuthHeaders()});
-            if (res.ok) {
-                const unassignedDocs = await res.json();
-                
-                // If editing, make sure the currently assigned user is in the list
-                let options = unassignedDocs;
-                if (currentUserId) {
-                    const currentUser = allUsers.find(u => u.id === currentUserId);
-                    if (currentUser && !options.find(u => u.id === currentUserId)) {
-                        options.push(currentUser);
-                    }
-                }
-                
-                options.forEach(u => {
-                    const opt = document.createElement('option');
-                    opt.value = u.id;
-                    opt.textContent = `ID: ${u.id} - ${u.username} (${u.fullname})`;
-                    if (currentUserId && u.id === currentUserId) {
-                        opt.selected = true;
-                    }
-                    select.appendChild(opt);
-                });
-            }
-        } catch(e) {
-            console.error("Could not fetch unassigned doctors", e);
-        }
-    }
 
     async function loadDocs() {
-        await fetchUsers(); // Đảm bảo đã có danh sách users
 
         const res = await fetch('/api/doctors', {headers: getAuthHeaders()});
         const docs = await res.json();
@@ -1473,12 +1407,7 @@
         ).forEach(d => {
             let statusBadge = d.status === 'Đang làm việc' ? '<span class="badge badge-le">Đang làm việc</span>' : '<span class="badge badge-khac">Ngưng hoạt động</span>';
             
-            // Tìm username được liên kết
-            let accountInfo = '<span style="color:#94a3b8; font-style:italic">Chưa gán</span>';
-            if (d.userId) {
-                const u = allUsers.find(x => x.id === d.userId);
-                accountInfo = u ? `<b>${u.username}</b>` : `ID: ${d.userId}`;
-            }
+
 
             // Tính hệ số bằng cấp
             let coeff = 1.0;
@@ -1493,8 +1422,7 @@
             let degreeHtml = d.degree ? `${d.degree} <br><span style="color:#2563eb; font-size:0.75rem; font-weight: 600;">(Hệ số: ${coeff})</span>` : '';
 
             let actions = `
-                <button class="link-btn" onclick="editDoc(${d.id})">Sửa</button> | 
-                <button class="link-btn" onclick="openAssignModal(${d.id}, '${d.fullname}', ${d.userId || 'null'})">Gán TK</button>
+                <button class="link-btn" onclick="editDoc(${d.id})">Sửa</button>
             `;
             
             let isLocked = d.status === 'Ngưng hoạt động';
@@ -1508,19 +1436,16 @@
                     <td>${d.dateOfBirth ? d.dateOfBirth : ''}</td>
                     <td>${d.phone || ''}<br><span style="color:#64748b; font-size:0.75rem">${d.email || ''}</span></td>
                     <td>${degreeHtml}</td>
-                    <td>${accountInfo}</td>
+
                     <td>${statusBadge}</td>
-                    <td>${actions}</td>
+                    <td style="white-space: nowrap;">${actions}</td>
                 </tr>
             `;
         });
     }
 
     async function openModal(id) { 
-        if(id === 'addDocModal' && !document.getElementById('docId').value) {
-            // Khi mở thêm mới, điền dropdown user
-            await populateUserDropdown('docUserId');
-        }
+
         document.getElementById(id).classList.add('is-open'); 
     }
 
@@ -1535,11 +1460,7 @@
             document.getElementById('docEmail').value = '';
             document.getElementById('docDegree').value = 'Đại học';
             document.getElementById('docWorkplace').value = '';
-            document.getElementById('docUserId').value = '';
             document.getElementById('docModalTitle').innerText = 'Thêm Bác sĩ mới';
-        } else if (id === 'assignModal') {
-            document.getElementById('assignDocId').value = '';
-            document.getElementById('assignUserId').value = '';
         }
     }
 
@@ -1557,7 +1478,7 @@
             document.getElementById('docDegree').value = d.degree || 'Đại học';
             document.getElementById('docWorkplace').value = d.workplace || '';
             
-            await populateUserDropdown('docUserId', d.userId);
+
 
             document.getElementById('docModalTitle').innerText = 'Sửa thông tin Bác sĩ';
             openModal('addDocModal');
@@ -1566,7 +1487,6 @@
 
     async function saveDoc() {
         const id = document.getElementById('docId').value;
-        const userIdStr = document.getElementById('docUserId').value;
         const data = {
             code: document.getElementById('docCode').value, 
             fullname: document.getElementById('docName').value,
@@ -1574,8 +1494,7 @@
             phone: document.getElementById('docPhone').value,
             email: document.getElementById('docEmail').value, 
             degree: document.getElementById('docDegree').value,
-            workplace: document.getElementById('docWorkplace').value, 
-            userId: userIdStr ? parseInt(userIdStr) : null
+            workplace: document.getElementById('docWorkplace').value
         };
         
         let url = '/api/doctors'; 
@@ -1602,32 +1521,7 @@
         }
     }
 
-    async function openAssignModal(id, name, currentUserId) {
-        document.getElementById('assignDocId').value = id;
-        document.getElementById('assignDocName').innerText = name;
-        await populateUserDropdown('assignUserId', currentUserId);
-        openModal('assignModal');
-    }
 
-    async function submitAssignUser() {
-        const id = document.getElementById('assignDocId').value;
-        const userIdStr = document.getElementById('assignUserId').value;
-        
-        const res = await fetch('/api/doctors/' + id + '/assign-user', { 
-            method: 'PUT', 
-            headers: getAuthHeaders(), 
-            body: JSON.stringify({userId: userIdStr ? parseInt(userIdStr) : null}) 
-        });
-        
-        if (res.ok) { 
-            alert("Gán tài khoản thành công!");
-            closeModal('assignModal'); 
-            loadDocs(); 
-        } else {
-            const err = await res.json();
-            alert("Lỗi: " + err.message);
-        }
-    }
 
     async function toggleDocStatus(id, actionName) {
         if(confirm(`Bạn có chắc chắn muốn ${actionName.toLowerCase()} bác sĩ này không?`)) {
@@ -1709,6 +1603,7 @@
         if (subtitleEl) subtitleEl.innerText = currentSettings.subtitle;
 
         const allowed = allowedMenus[normalizedRole] || [];
+        if (!allowed.includes('profile')) allowed.push('profile');
                 document.querySelectorAll('#sidebarNav [data-menu]').forEach(el => {
             const menuId = el.getAttribute('data-menu');
             if (!allowed.includes(menuId)) {

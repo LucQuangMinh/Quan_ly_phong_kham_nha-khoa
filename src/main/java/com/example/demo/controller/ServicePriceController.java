@@ -12,7 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/prices")
-@PreAuthorize(roles = {"Admin", "Quản lý phòng khám"})
+@PreAuthorize(roles = {"Admin", "Quản lý phòng khám", "Kế toán"})
 public class ServicePriceController {
 
     @Autowired

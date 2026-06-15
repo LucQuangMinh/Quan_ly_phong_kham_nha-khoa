@@ -26,7 +26,8 @@ public class RevenueController {
      */
     @GetMapping("/kpi")
     public ResponseEntity<?> getKPI(
-            @RequestHeader(value = "X-User-Role", defaultValue = "") String role) {
+            @RequestHeader(value = "X-User-Role", defaultValue = "") String role,
+            @RequestParam(required = false) String date) {
         
         try { role = java.net.URLDecoder.decode(role, java.nio.charset.StandardCharsets.UTF_8); } catch (Exception e) {}
 
@@ -34,18 +35,18 @@ public class RevenueController {
             return ResponseEntity.status(403).body(Map.of("message", "Forbidden"));
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate targetDate = (date != null && !date.isEmpty()) ? LocalDate.parse(date) : LocalDate.now();
 
-        List<CashierShift> shifts = shiftRepo.findByShiftDateOrderByStartTimeDesc(today).stream()
+        List<CashierShift> shifts = shiftRepo.findByShiftDateOrderByStartTimeDesc(targetDate).stream()
                 .filter(s -> "CLOSED".equals(s.getStatus()))
                 .toList();
 
         Double netRevenue = shifts.stream().mapToDouble(s -> s.getTheoreticalCash() != null ? s.getTheoreticalCash() : 0.0).sum();
         Double cashAtCounter = shifts.stream().mapToDouble(s -> s.getCountedCash() != null ? s.getCountedCash() : 0.0).sum();
 
-        Long totalInvoices = appointmentRepo.countByExaminationDateAndStatus(today, "Đã thanh toán");
+        Long totalInvoices = appointmentRepo.countByExaminationDateAndStatus(targetDate, "Đã thanh toán");
 
-        List<Object[]> categoryAndServices = appointmentRepo.sumRevenueByCategoryAndService(today, "Đã thanh toán");
+        List<Object[]> categoryAndServices = appointmentRepo.sumRevenueByCategoryAndService(targetDate, "Đã thanh toán");
         
         Map<String, Double> categoryTotals = new HashMap<>();
         Map<String, List<Map<String, Object>>> categoryDetails = new HashMap<>();
@@ -89,8 +90,9 @@ public class RevenueController {
      * List Shift Reconciliations
      */
     @GetMapping("/shifts")
-    public ResponseEntity<?> getShifts() {
-        return ResponseEntity.ok(shiftRepo.findByShiftDateOrderByStartTimeDesc(LocalDate.now()));
+    public ResponseEntity<?> getShifts(@RequestParam(required = false) String date) {
+        LocalDate targetDate = (date != null && !date.isEmpty()) ? LocalDate.parse(date) : LocalDate.now();
+        return ResponseEntity.ok(shiftRepo.findByShiftDateOrderByStartTimeDesc(targetDate));
     }
 
     /**

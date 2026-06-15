@@ -56,7 +56,7 @@ public class UserService {
         if (user.getEmail() != null && !user.getEmail().isEmpty() && !user.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             throw new RuntimeException("Email không đúng định dạng!");
         }
-        if (user.getPhone() != null && !user.getPhone().isEmpty() && !user.getPhone().matches("^\\\\d{10,11}$")) {
+        if (user.getPhone() != null && !user.getPhone().isEmpty() && !user.getPhone().matches("^\\d{10,11}$")) {
             throw new RuntimeException("Số điện thoại không đúng định dạng!");
         }
         if (user.getStatus() == null) user.setStatus("Hoạt động");
@@ -71,7 +71,7 @@ public class UserService {
         if (details.getEmail() != null && !details.getEmail().isEmpty() && !details.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             throw new RuntimeException("Email không đúng định dạng!");
         }
-        if (details.getPhone() != null && !details.getPhone().isEmpty() && !details.getPhone().matches("^\\\\d{10,11}$")) {
+        if (details.getPhone() != null && !details.getPhone().isEmpty() && !details.getPhone().matches("^\\d{10,11}$")) {
             throw new RuntimeException("Số điện thoại không đúng định dạng!");
         }
         user.setFullname(details.getFullname());

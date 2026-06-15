@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thông tin tài khoản - Nha Khoa Care</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --sidebar-bg: #ffffff;
+      --sidebar-border: #e2e8f0;
+      --text-primary: #1e293b;
+      --text-muted: #64748b;
+      --hover-bg: #f1f5f9;
+      --active-bg: #eff6ff;
+      --active-text: #2563eb;
+      --radius-item: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: #fafbfc;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      color: var(--text-primary);
+    }
+
+    /* ── Sidebar ── */
+    aside {
+      width: 280px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 16px;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 4px 10px 16px;
+      border-bottom: 1px solid var(--sidebar-border);
+      margin-bottom: 12px;
+    }
+
+    .sidebar-header h1 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-header p {
+      margin: 4px 0 0;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-item);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      text-decoration: none;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .nav-item:hover { background: var(--hover-bg); }
+    .nav-item .icon { flex-shrink: 0; width: 22px; height: 22px; color: var(--text-muted); }
+    .nav-item.active { background: var(--active-bg); color: var(--active-text); }
+    .nav-item.active .icon { color: var(--active-text); }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      min-width: 0;
+      padding: 24px 32px 40px;
+      background: #fafbfc;
+      overflow-y: auto;
+    }
+
+    .content-shell {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .crumb {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin: 0 0 16px;
+    }
+
+    .page-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .page-head h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--sidebar-border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      margin-bottom: 24px;
+      max-width: 600px;
+    }
+
+    .card-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: 0 0 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--sidebar-border);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    
+    .form-group input:disabled {
+      background: #f1f5f9;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn {
+      padding: 10px 16px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: var(--primary-hover); }
+
+    .btn.outline {
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+    .btn.outline:hover { background: #eff6ff; }
+  </style>
+</head>
+<body>
+  <aside>
+    <header class="sidebar-header">
+      <h1 id="sidebarTitle">Hệ thống Nha Khoa</h1>
+      <p id="sidebarSubtitle">Vai trò</p>
+    </header>
+
+    <nav class="nav" id="sidebarNav" aria-label="Menu chính">
+      <a href="checkin.html" class="nav-item checkin-menu" data-menu="checkin">
+        <span class="icon" aria-hidden="true">📍</span>
+        <span class="menu-text">Tiếp đón (Check-in)</span>
+      </a>
+      <a href="appointments.html" class="nav-item" data-menu="appointments">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span>
+        <span class="menu-text">Đăng ký khám</span>
+      </a>
+      <a href="tracking.html" class="nav-item" data-menu="tracking">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg></span>
+        <span class="menu-text">Theo dõi lịch khám</span>
+      </a>
+      <a href="schedules.html" class="nav-item" data-menu="schedules">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span>
+        <span class="menu-text">Lịch trực bác sĩ</span>
+      </a>
+      <a href="doctors.html" class="nav-item" data-menu="doctors">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+        <span class="menu-text">Hồ sơ Bác sĩ</span>
+      </a>
+      <a href="users.html" class="nav-item" data-menu="users">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+        <span class="menu-text">Quản lý Người dùng</span>
+      </a>
+      <a href="services.html" class="nav-item" data-menu="services">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>
+        <span class="menu-text">Danh mục Dịch vụ</span>
+      </a>
+      <a href="holidays.html" class="nav-item" data-menu="holidays">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg></span>
+        <span class="menu-text">Thiết lập ngày nghỉ</span>
+      </a>
+      <a href="shifts.html" class="nav-item" data-menu="shifts">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
+        <span class="menu-text">Thiết lập ca làm việc</span>
+      </a>
+      <a href="revenue.html" class="nav-item" data-menu="finance-group">
+        <span class="icon" aria-hidden="true">💰</span>
+        <span class="menu-text">Tài chính & Lương</span>
+      </a>
+      
+      <div style="margin-top: 30px; border-top: 1px solid var(--sidebar-border); padding-top: 10px;"></div>
+      <a href="profile.html" class="nav-item" data-menu="profile">
+        <span class="icon" aria-hidden="true">👤</span>
+        <span class="menu-text">Thông tin tài khoản</span>
+      </a>
+      <a href="#" class="nav-item" onclick="logout(event)" style="color: #dc2626;">
+        <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
+        <span class="menu-text">Đăng xuất</span>
+      </a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="content-shell">
+      <div class="crumb">Hệ thống / <strong>Thông tin tài khoản</strong></div>
+      <div class="page-head">
+        <h1>Hồ sơ Cá nhân</h1>
+      </div>
+
+      <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start;">
+        <!-- Left column: Update info -->
+        <div class="card" style="flex: 1; min-width: 300px;">
+          <h2 class="card-title">Cập nhật thông tin</h2>
+          <form id="profileForm" autocomplete="off">
+            <div class="form-group">
+              <label>Tên đăng nhập</label>
+              <input type="text" id="pUsername" disabled>
+            </div>
+            <div class="form-group">
+              <label>Vai trò</label>
+              <input type="text" id="pRole" disabled>
+            </div>
+            <div class="form-group">
+              <label>Họ và tên (*)</label>
+              <input type="text" id="pFullname" required>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="pEmail">
+            </div>
+            <div class="form-group">
+              <label>Số điện thoại</label>
+              <input type="text" id="pPhone">
+            </div>
+            <button type="submit" class="btn" id="btnUpdateInfo">Lưu thông tin</button>
+          </form>
+        </div>
+
+        <!-- Right column: Reset password -->
+        <div class="card" style="width: 100%; max-width: 400px;">
+          <h2 class="card-title">Đổi mật khẩu</h2>
+          <form id="passwordForm" autocomplete="off">
+            <div class="form-group">
+              <label>Mật khẩu mới (*)</label>
+              <input type="password" id="pNewPass" required minlength="8" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+              <label>Xác nhận mật khẩu mới (*)</label>
+              <input type="password" id="pConfirmPass" required minlength="8" autocomplete="new-password">
+            </div>
+            <button type="submit" class="btn outline" id="btnUpdatePass">Đổi mật khẩu</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function logout(e) {
+      if(e) e.preventDefault();
+      localStorage.removeItem('user');
+      window.location.href = 'login.html';
+    }
+
+    function setupDynamicUI() {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || !user.role) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        let normalizedRole = user.role.toLowerCase()
+            .replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+
+        const titleMap = {
+            'admin': { title: 'Quản trị Viên', subtitle: 'Phòng Hành chính' },
+            'quan-ly-phong-kham': { title: 'Quản lý', subtitle: 'Phòng Khám Nha Khoa' },
+            'le-tan': { title: 'Lễ tân', subtitle: 'Quầy tiếp đón' },
+            'bac-si': { title: 'Bác sĩ', subtitle: 'Chuyên môn' },
+            'benh-nhan': { title: 'Bệnh nhân', subtitle: 'Cổng thông tin' }
+        };
+
+        const allowedMenus = {
+            'ke-toan': ['finance-group', 'profile'],
+            'admin': ['users', 'doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking', 'finance-group', 'profile'],
+            'quan-ly-phong-kham': ['doctors', 'schedules', 'services', 'holidays', 'shifts', 'tracking', 'finance-group', 'profile'],
+            'le-tan': ['appointments', 'tracking', 'schedules', 'checkin', 'profile'],
+            'bac-si': ['schedules', 'tracking', 'profile'],
+            'benh-nhan': ['appointments', 'profile']
+        };
+
+        const currentSettings = titleMap[normalizedRole] || { title: 'Hệ thống', subtitle: 'Người dùng' };
+        
+        const titleEl = document.getElementById('sidebarTitle');
+        const subtitleEl = document.getElementById('sidebarSubtitle');
+        if (titleEl) titleEl.innerText = currentSettings.title;
+        if (subtitleEl) subtitleEl.innerText = currentSettings.subtitle;
+
+        const allowed = allowedMenus[normalizedRole] || ['profile'];
+        document.querySelectorAll('#sidebarNav [data-menu]').forEach(el => {
+            const menuId = el.getAttribute('data-menu');
+            if (!allowed.includes(menuId)) {
+                el.style.display = 'none';
+            } else {
+                if (el.classList.contains('nav-group')) {
+                    el.style.display = 'flex';
+                } else if (el.classList.contains('usecase-nav')) {
+                    el.style.display = 'block';
+                } else {
+                    el.style.display = 'flex';
+                }
+                
+                if (window.location.href.includes(menuId + '.html') && menuId !== 'finance-group') {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            }
+        });
+    }
+
+    async function loadProfile() {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if(!user) return;
+      
+      // We only have user.id, user.fullname, user.role from localstorage
+      // But we need email/phone. So we fetch all users and find ourselves
+      try {
+        const res = await fetch('/api/users');
+        if(res.ok) {
+            const users = await res.json();
+            const me = users.find(u => u.id === user.id);
+            if(me) {
+                document.getElementById('pUsername').value = me.username;
+                document.getElementById('pRole').value = me.role;
+                document.getElementById('pFullname').value = me.fullname;
+                document.getElementById('pEmail').value = me.email || '';
+                document.getElementById('pPhone').value = me.phone || '';
+            }
+        }
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const user = JSON.parse(localStorage.getItem('user'));
+        const data = {
+            role: document.getElementById('pRole').value,
+            fullname: document.getElementById('pFullname').value,
+            email: document.getElementById('pEmail').value,
+            phone: document.getElementById('pPhone').value
+        };
+
+        const btn = document.getElementById('btnUpdateInfo');
+        btn.textContent = 'Đang lưu...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/users/' + user.id, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            if(res.ok) {
+                // Update local storage fullname
+                user.fullname = data.fullname;
+                localStorage.setItem('user', JSON.stringify(user));
+                alert("Cập nhật thông tin thành công!");
+            } else {
+                const err = await res.json();
+                alert("Lỗi: " + err.message);
+            }
+        } catch(e) {
+            alert("Không thể kết nối máy chủ!");
+        } finally {
+            btn.textContent = 'Lưu thông tin';
+            btn.disabled = false;
+        }
+    });
+
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const user = JSON.parse(localStorage.getItem('user'));
+        const newPass = document.getElementById('pNewPass').value;
+        const confirmPass = document.getElementById('pConfirmPass').value;
+
+        if(newPass !== confirmPass) {
+            alert("Mật khẩu xác nhận không khớp!");
+            return;
+        }
+
+        const btn = document.getElementById('btnUpdatePass');
+        btn.textContent = 'Đang đổi...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/users/' + user.id + '/reset-password', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({password: newPass})
+            });
+            if(res.ok) {
+                alert("Đổi mật khẩu thành công!");
+                document.getElementById('passwordForm').reset();
+            } else {
+                const err = await res.json();
+                alert("Lỗi: " + err.message);
+            }
+        } catch(e) {
+            alert("Không thể kết nối máy chủ!");
+        } finally {
+            btn.textContent = 'Đổi mật khẩu';
+            btn.disabled = false;
+        }
+    });
+
+    window.onload = function() {
+        setupDynamicUI();
+        loadProfile();
+    }
+  </script>
+</body>
+</html>

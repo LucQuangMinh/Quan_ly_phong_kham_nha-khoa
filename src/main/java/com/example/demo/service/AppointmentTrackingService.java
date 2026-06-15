@@ -105,6 +105,12 @@ public class AppointmentTrackingService {
             existing.setStatus(newStatus);
             existing.setUpdatedAt(LocalDateTime.now());
             
+            if ("Đã đến".equals(newStatus)) {
+                existing.setArrivedAt(LocalDateTime.now());
+            } else if ("Đã khám".equals(newStatus)) {
+                existing.setFinishedAt(LocalDateTime.now());
+            }
+            
             // Sync with PatientAppointment
             if (existing.getAppointmentId() != null) {
                 appointmentRepo.findById(existing.getAppointmentId()).ifPresent(app -> {

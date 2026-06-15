@@ -188,7 +188,7 @@
     }
 
     .content-shell {
-      max-width: 960px;
+      max-width: 1600px;
       margin: 0 auto;
     }
 
@@ -1294,6 +1294,10 @@
         <span class="menu-text">Tài chính & Lương</span>
       </a>
 <div style="margin-top: 30px; border-top: 1px solid var(--sidebar-border); padding-top: 10px;"></div>
+      <a href="profile.html" class="nav-item" data-menu="profile">
+        <span class="icon" aria-hidden="true">👤</span>
+        <span class="menu-text">Thông tin tài khoản</span>
+      </a>
       <a href="#" class="nav-item" onclick="logout(event)" style="color: #dc2626;">
         <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
         <span class="menu-text">Đăng xuất</span>
@@ -1310,7 +1314,7 @@
       
       <div class="card">
         <div class="toolbar" style="display: flex; gap: 10px; margin-bottom: 14px;">
-          <input type="text" id="searchInput" class="search" placeholder="Tìm theo mã, tên..." onkeyup="loadServices()" style="flex: 1; max-width: 320px; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px;" />
+          <input type="text" id="searchInput" class="search" placeholder="Tìm theo mã, tên..." autocomplete="off" onkeyup="loadServices()" style="flex: 1; max-width: 320px; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px;" />
           <select id="groupFilter" class="search" style="max-width: 200px; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px;" onchange="loadServices()">
             <option value="">Tất cả nhóm dịch vụ</option>
             <option value="Khám">Khám</option>
@@ -1609,6 +1613,7 @@
         if (subtitleEl) subtitleEl.innerText = currentSettings.subtitle;
 
         const allowed = allowedMenus[normalizedRole] || [];
+        if (!allowed.includes('profile')) allowed.push('profile');
                 document.querySelectorAll('#sidebarNav [data-menu]').forEach(el => {
             const menuId = el.getAttribute('data-menu');
             if (!allowed.includes(menuId)) {

@@ -93,6 +93,7 @@ public class CheckInController {
         }
 
         tracking.setStatus("Đã đến");
+        tracking.setArrivedAt(LocalDateTime.now());
         tracking.setUpdatedAt(LocalDateTime.now());
         trackingRepo.save(tracking);
 
