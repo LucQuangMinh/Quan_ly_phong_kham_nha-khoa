@@ -41,10 +41,10 @@ spring.jpa.hibernate.ddl-auto=update
 ### Bước 4: Chạy dự án
 Có 2 cách để chạy dự án:
 
-**Cách 1: Chạy bằng dòng lệnh (Khuyên dùng nếu không quen dùng IDE)**
-Mở Terminal / Command Prompt tại thư mục gốc của dự án và gõ lệnh:
-- Trên Windows: `.\mvnw spring-boot:run`
-- Trên Mac/Linux: `./mvnw spring-boot:run`
+**Cách 1: Chạy bằng dòng lệnh (Terminal / Command Prompt)**
+Mở Terminal tại thư mục gốc của dự án và gõ 2 lệnh sau:
+- Bước 1 (Build): `.\mvnw clean package -DskipTests` (trên Mac/Linux: `./mvnw clean package -DskipTests`)
+- Bước 2 (Chạy): `java -jar target\demo-0.0.1-SNAPSHOT.jar` (trên Mac/Linux: `java -jar target/demo-0.0.1-SNAPSHOT.jar`)
 
 **Cách 2: Chạy bằng IDE (IntelliJ IDEA, Eclipse, VS Code...)**
 1. Mở thư mục dự án bằng IDE.
