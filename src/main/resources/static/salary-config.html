@@ -204,7 +204,7 @@
             <!-- UC4.1 -->
             <div class="card">
                 <h3 class="card-title">1. Mức tiền cơ bản (UC4.1)</h3>
-                <form id="configForm" onsubmit="saveBaseConfig(event)" style="display: flex; gap: 16px; align-items: flex-end;">
+                <form id="configForm" onsubmit="event.preventDefault(); saveBaseConfig(event)" style="display: flex; gap: 16px; align-items: flex-end;">
                     <div class="form-group" style="margin-bottom: 0; flex: 1;">
                         <label for="baseHourlyRate">Số tiền một giờ (VNĐ) <span style="color: #dc2626">*</span></label>
                         <input type="number" id="baseHourlyRate" required min="1" step="1000" placeholder="Ví dụ: 300000">
@@ -275,7 +275,6 @@
             const role = (currentUser.role || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
             
             if (!role.includes('admin') && !role.includes('quan-ly') && !role.includes('ke toan')) {
-                alert('Chỉ Admin hoặc Quản lý mới có quyền truy cập trang này!');
                 window.location.href = '/';
                 return;
             }
@@ -309,7 +308,7 @@
             try {
                 const res = await fetch('/api/salary-config', {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-Role': 'Admin' },
                     body: JSON.stringify({ baseHourlyRate: rate })
                 });
                 if (res.ok) {
@@ -441,7 +440,7 @@
                                 <input type="number" id="coeff_${s.id}" value="${s.bonusCoefficient || 0.0}" step="0.05" min="0" max="2.0">
                             </td>
                             <td style="text-align: right;">
-                                <button class="btn" style="padding: 6px 12px; font-size: 0.8125rem" onclick="updateServiceCoeff(${s.id})">Lưu hệ số</button>
+                                <button class="btn" style="padding: 6px 12px; font-size: 0.8125rem" onclick="updateServiceCoeff(event, ${s.id})">Lưu hệ số</button>
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -450,7 +449,7 @@
             } catch (e) { console.error(e); }
         }
 
-        async function updateServiceCoeff(id) {
+        async function updateServiceCoeff(event, id) {
             const s = servicesList.find(x => x.id === id);
             const newCoeff = parseFloat(document.getElementById(`coeff_${id}`).value);
             s.bonusCoefficient = newCoeff;
